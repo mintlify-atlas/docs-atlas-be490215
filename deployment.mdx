@@ -1,5 +1,5 @@
 ---
-title: "Deploy Doge Unblocker to the Cloud"
+title: "Deploy Doge Unblocker to Docker, Render, Railway, and More"
 sidebarTitle: "Deployment"
 description: "Deploy Doge Unblocker to Docker, Render, Vercel, Railway, Koyeb, or Cyclic with no database needed — just a Node.js 16+ runtime listening on port 8000."
 ---
@@ -72,7 +72,7 @@ The server always binds to port **8000**. If your platform requires a different 
 
     The start script (`npm start`) executes `node index.js` as defined in `package.json`. When the server is ready you will see:
 
-    ```
+    ```text
     Doge Unblocker has sucessfully started!
     Listening on localhost (Port 8000).
     ```
@@ -113,7 +113,7 @@ The server always binds to port **8000**. If your platform requires a different 
 Render deployment is driven by the `render.yaml` file included in the repository:
 
 ```yaml
-services:
+ services:
   - type: web
     name: educational-website
     env: node

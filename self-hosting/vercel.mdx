@@ -4,7 +4,7 @@ sidebarTitle: "Vercel"
 description: "Deploy Doge Unblocker to Vercel as a serverless Node.js function using the included vercel.json with automatic route handling for all proxy paths."
 ---
 
-Vercel can host Doge Unblocker as a serverless Node.js application using the `@vercel/node` runtime. The repository ships with a `vercel.json` configuration file that handles all routing automatically — every incoming path, including proxy-specific routes like `/student` and `/bare/*`, is funnelled through `index.js`.
+Vercel can host Doge Unblocker as a serverless Node.js application using the `@vercel/node` runtime. The repository ships with a `vercel.json` configuration file that handles all routing automatically — every incoming path, including proxy-specific routes like `/student` and `/apps`, is funnelled through `index.js`.
 
 ## vercel.json
 
@@ -40,6 +40,10 @@ The `vercel.json` file at the repository root controls how Vercel builds and rou
 
 <Note>
   The wildcard route `"src": "/(.*)", "dest": "/"` is essential for Doge Unblocker. Without it, Vercel would treat paths like `/student`, `/apps`, `/bare/*`, and `/lessons` as separate static assets and return 404 errors. The route ensures every request reaches `index.js`, where Express handles dispatch.
+</Note>
+
+<Note>
+  **WebSocket proxying via `/bare/*` does not work reliably on Vercel.** Vercel's serverless runtime handles each request as an isolated HTTP invocation and does not support long-lived WebSocket connections. `index.js` upgrades WebSocket connections through `bareServer.routeUpgrade`, but that upgrade path requires a persistent process — something serverless functions cannot provide. Web proxy features that depend on WebSocket tunnelling will fail silently or produce connection errors on Vercel. For full WebSocket support, deploy on a platform with persistent processes such as [Railway](/self-hosting/railway), [Render](/self-hosting/render), or [Docker](/self-hosting/docker).
 </Note>
 
 ## Deploying to Vercel

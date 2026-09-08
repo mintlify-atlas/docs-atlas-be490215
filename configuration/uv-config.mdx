@@ -59,13 +59,9 @@ self.__uv$config = {
 
 ## URL Encoding with XOR
 
-Doge Unblocker uses Ultraviolet's built-in XOR codec by default. When a user visits `https://example.com` through the proxy, the destination URL is XOR-encoded and placed in the browser's address bar as something like:
+Doge Unblocker uses Ultraviolet's built-in XOR codec by default. When a user visits `https://example.com` through the proxy, the destination URL is XOR-encoded and appended to the prefix in the browser's address bar. The encoded segment is a percent-encoded binary string produced by XOR-transforming each character of the original URL — it does not resemble base64 or plain text. The service worker decodes the path with `Ultraviolet.codec.xor.decode` before making the upstream fetch.
 
-```
-/service/aHR0cHM6Ly9leGFtcGxlLmNvbS8=
-```
-
-Because XOR encoding transforms every byte of the URL, the original hostname and path are completely hidden from casual inspection of the address bar and from any network-level URL logging that only captures the path portion of a request. The service worker decodes the path with `Ultraviolet.codec.xor.decode` before making the upstream fetch.
+Because XOR encoding transforms every byte of the URL, the original hostname and path are completely hidden from casual inspection of the address bar and from any network-level URL logging that only captures the path portion of a request.
 
 <Note>
   The bare server path (`/bare/`) must match the route registered in the Express server. In `index.js`, `createBareServer("/bare/")` and the `bareServer.shouldRoute(req)` check together ensure that all requests beginning with `/bare/` are handled by the bare server rather than Express. If you change `bare` in this config, you must update that string in `index.js` as well.

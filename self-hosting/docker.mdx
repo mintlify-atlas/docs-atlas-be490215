@@ -29,7 +29,7 @@ CMD [ "npm", "start" ]
 | `FROM node:19-bullseye` | Bases the image on the official Node.js 19 image built on Debian Bullseye — a stable, well-supported Linux base. |
 | `ENV NODE_ENV=production` | Tells Express and other packages to apply production-mode optimisations (e.g. disabling verbose error output). |
 | `WORKDIR /app` | Sets `/app` as the working directory inside the container so all subsequent commands run there. |
-| `COPY package*.json ./` | Copies only the package manifests first, allowing Docker to cache the dependency layer separately. |
+| `COPY ["package.json", "package-lock.json*", "./"]` | Copies only the package manifests first, allowing Docker to cache the dependency layer separately. |
 | `RUN npm install` | Installs all production dependencies declared in `package.json`. |
 | `EXPOSE 8000` | Documents that the container listens on port `8000` — required for correct port mapping at runtime. |
 | `COPY . .` | Copies the rest of the source code into the container after dependencies are installed. |

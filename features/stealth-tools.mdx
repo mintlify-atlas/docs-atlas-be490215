@@ -1,14 +1,14 @@
 ---
 title: "Stealth Tools: Stay Hidden from Monitoring"
 sidebarTitle: "Stealth Tools"
-description: "Five built-in stealth tools — about:blank cloaking, clickoff disguise, a panic key, and leave confirmation — to evade school monitoring software."
+description: "Five built-in stealth tools — open-in-new-window, about:blank cloaking, clickoff disguise, a panic key, and leave confirmation — to evade school monitoring."
 ---
 
 Doge Unblocker includes a suite of stealth tools designed to keep you hidden from screen-monitoring and redirect-based classroom management software. Each tool is independent and can be toggled on or off at any time from the Settings page (`/settings.html`).
 
-## About:Blank Cloaking (Basic)
+## Open in New Window
 
-The simplest stealth tool opens a brand-new browser window pointed at `about:blank`, embeds the current page as a full-screen `<iframe>` inside it, and then silently redirects the original tab to `classroom.google.com`. To a teacher or monitoring tool watching the tab bar, the original tab shows Classroom while the actual content lives in the new window.
+`openWindow()` opens a brand-new blank browser window, then embeds the current page as a full-screen `<iframe>` inside it. The original tab is untouched — only the new window contains the proxy content. This is useful for quickly moving the proxied page out of your primary tab without any automatic redirects.
 
 ```javascript
 // static/assets/js/functions.js
@@ -27,11 +27,13 @@ function openWindow() {
 }
 ```
 
-This function is accessible from the right-click context menu (**About:Blank Cloak**) and from the Settings page (**Open Blanker** button).
+This function is accessible from the right-click context menu and from the Settings page.
 
-## Advanced About:Blank Cloaking
+## About:Blank Cloaking
 
-The advanced variant takes the same concept further: it runs automatically on every page load (before the user has to click anything) by checking a flag in `localStorage`. When `aboutBlank` is set to `"enabled"`, the script detects that it is running in a top-level context (not already inside an iframe), opens an `about:blank` popup, embeds the page as a full-screen iframe, and navigates the original tab to `classroom.google.com` using `location.replace()` — which also removes the proxy URL from the browser's back-stack.
+The about:blank cloak runs automatically on every page load by checking a flag in `localStorage`. When `aboutBlank` is set to `"enabled"`, the script detects that it is running in a top-level context (not already inside an iframe), opens an `about:blank` popup, embeds the current page as a full-screen iframe inside that popup, and then navigates the original tab to `classroom.google.com` using `location.replace()` — which also removes the proxy URL from the browser's back-stack.
+
+The popup inherits the tab title and favicon from `localStorage` keys `name` and `icon` (defaulting to the Google Drive appearance), so it blends in visually.
 
 ```javascript
 // static/assets/js/functions.js
@@ -88,12 +90,12 @@ function disableAboutBlank() {
 ```
 
 <Warning>
-  Advanced about:blank cloaking requires your browser to **allow popups and redirects** for the site. If the popup is blocked, the script will display an alert prompting you to update your browser's popup permissions. This feature is also **not supported on Firefox** due to how Firefox handles `about:blank` popup windows.
+  About:blank cloaking requires your browser to **allow popups and redirects** for the site. If the popup is blocked, the script will display an alert prompting you to update your browser's popup permissions. This feature is also **not supported on Firefox** due to how Firefox handles `about:blank` popup windows.
 </Warning>
 
 ## Clickoff Cloaking
 
-Clickoff cloaking watches the browser's focus state. The moment you switch to another tab or window (`blur` event), the current tab automatically morphs to look like Google Docs, protecting you from a teacher who glances at your screen while you are away from the keyboard.
+Clickoff cloaking monitors the browser's focus state. When enabled, it stores the `clickoffCloak` flag in `localStorage`. The `enableClickoffCloak()` and `disableClickoffCloak()` functions in `settings.js` manage this toggle:
 
 ```javascript
 // static/assets/js/settings.js
@@ -109,7 +111,7 @@ function disableClickoffCloak() {
 }
 ```
 
-When `clickoffCloak` is `"enabled"`, the page attaches a `blur` listener that calls `docsCloak()` (setting the tab title to `"Google Docs"` and swapping the favicon), then restores the original tab appearance on `focus`. Enable or disable it using the **Clickoff Cloaking** toggle on the Settings page.
+Enable or disable it using the **Clickoff Cloaking** toggle on the Settings page.
 
 ## Panic Key
 
@@ -143,7 +145,7 @@ function removePK() {
 The chosen key is saved to `localStorage` under the key `pkKey`. On every page load, Doge Unblocker registers a `keydown` listener; if the pressed key matches `pkKey`, it redirects immediately.
 
 <Tip>
-  Choose an unusual key combination — such as `F2` or `Insert` — that you would never press by accident during normal browsing. Avoid common keys like `Escape` or `Backspace` that fire in many everyday interactions.
+  Choose an unusual key — such as `F2` or `Insert` — that you would never press by accident during normal browsing. Avoid common keys like `Escape` or `Backspace` that fire in many everyday interactions.
 </Tip>
 
 ## Leave Confirmation
@@ -180,10 +182,10 @@ Toggle it on or off with the **Toggle** button in the **Leave Confirmation** sec
 
 ## Tool Comparison
 
-| Tool | Hides from tab-bar monitoring | Defeats forced redirects | Works on blur/alt-tab | Auto-activates on load |
-|---|:---:|:---:|:---:|:---:|
-| About:Blank (Basic) | ✅ | ❌ | ❌ | ❌ |
-| Advanced About:Blank | ✅ | ✅ | ❌ | ✅ |
-| Clickoff Cloaking | ✅ | ❌ | ✅ | ✅ |
-| Panic Key | ✅ | ❌ | ❌ | ✅ |
-| Leave Confirmation | ❌ | ✅ | ❌ | ✅ |
+| Tool | Hides proxy in tab bar | Defeats forced redirects | Auto-activates on load |
+|---|:---:|:---:|:---:|
+| Open in New Window | ✅ | ❌ | ❌ |
+| About:Blank Cloak | ✅ | ✅ | ✅ |
+| Clickoff Cloaking | ✅ | ❌ | ✅ |
+| Panic Key | ✅ | ❌ | ✅ |
+| Leave Confirmation | ❌ | ✅ | ✅ |

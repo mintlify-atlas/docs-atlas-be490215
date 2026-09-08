@@ -129,7 +129,11 @@ function disableParticles() {
 }
 ```
 
-Toggle particles with the **Enable / Disable** buttons in the **Particles** section of Settings. Note that the button labels are intentionally inverted in the source code — clicking the **Enable** button calls `disableParticles()` internally (the CSS class controls visibility, so the logic is flipped). The Settings UI handles this transparently.
+Toggle particles with the **Enable / Disable** buttons in the **Particles** section of Settings.
+
+<Note>
+  The particle button labels are **inverted** in the source code — the button labelled **Enable** calls `disableParticles()`, and the button labelled **Disable** calls `enableParticles()`. This is a known quirk explicitly noted by a comment in `settings.js`: `// FOR PARTICLES, DISABLING PARTICLES IS ENABLING. THE BUTTONS ARE OPPISITE.` The buttons are greyed-out appropriately based on the current `localStorage` state so the Settings page still behaves as expected.
+</Note>
 
 ## Custom Background
 
@@ -140,17 +144,20 @@ You can replace any theme gradient with a custom background image by providing a
 
 function saveBackground() {
   const backgroundUrl = document.getElementById("backgroundPopup-input").value;
+  const bgErrorMessageDiv = document.getElementById("bgErrorMessage");
+  localStorage.setItem('bgsUrl', backgroundUrl);
   if (backgroundUrl.trim() === "") {
-    document.getElementById("bgErrorMessage").style.display = "block";
+    bgErrorMessageDiv.style.display = "block";
   } else {
-    localStorage.setItem("bgUrl",    backgroundUrl);
+    localStorage.setItem("bgUrl", backgroundUrl);
     localStorage.setItem('bgCheck', 'on');
+    closeBackgroundPopup();
     window.location.reload();
   }
 }
 
 function resetBackground() {
-  localStorage.setItem("bgUrl",   'none');
+  localStorage.setItem("bgUrl", 'none');
   localStorage.setItem('bgCheck', 'off');
   window.location.reload();
 }

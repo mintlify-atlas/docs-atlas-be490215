@@ -1,5 +1,5 @@
 ---
-title: "Get Started with Doge Unblocker"
+title: "Doge Unblocker: Get Started Locally in Under Two Minutes"
 sidebarTitle: "Quickstart"
 description: "Run Doge Unblocker locally in under two minutes: clone the repo, install dependencies, start the server, and browse blocked sites through the proxy."
 ---
@@ -45,7 +45,7 @@ Doge Unblocker runs as a standard Node.js web server and has no external databas
 
     When the server is ready you will see this message in your terminal:
 
-    ```
+    ```text
     Doge Unblocker has sucessfully started!
     Listening on localhost (Port 8000).
     ```
@@ -58,13 +58,9 @@ Doge Unblocker runs as a standard Node.js web server and has no external databas
   <Step title="Open the app in your browser">
     Navigate to the home page:
 
-    ```
+    ```text
     http://localhost:8000/app
     ```
-
-    <Note>
-      Doge Unblocker automatically redirects any `http://` request to `https://` when accessed over the public internet. For local development on `localhost` this redirect does not apply, so `http://localhost:8000/app` will load normally.
-    </Note>
   </Step>
 
   <Step title="Enter a URL or search query">
@@ -122,6 +118,7 @@ Once the server is running, the following routes are available:
 
 | Route | Description |
 |---|---|
+| `/` | Static file server — serves all files from the `static/` directory |
 | `/app` | Main home page with the proxy search bar |
 | `/student` | Proxy viewer — loads the last encoded URL |
 | `/apps` | Web apps and games catalog |
@@ -129,7 +126,8 @@ Once the server is running, the following routes are available:
 | `/lessons` | Arcade games loader |
 | `/credits` | Credits page |
 | `/partners` | Partners page |
-| `/bare/` | TOMP bare server endpoint (used internally by Ultraviolet) |
+| `/bare/*` | TOMP bare server endpoint (used internally by Ultraviolet) |
+| `*` (catch-all) | Returns HTTP 404 and serves `static/404.html` |
 
 ## What's Next?
 

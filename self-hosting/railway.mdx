@@ -36,9 +36,9 @@ Railway is a developer-focused cloud platform that makes deploying Node.js appli
   <Step title="Access your live deployment">
     Once the build completes, Railway assigns your service a public URL in the format `https://<project-name>.up.railway.app`. Click **View Deployment** in the dashboard to open it.
 
-    <Tip>
-      Railway automatically injects a `PORT` environment variable into your application's runtime. `index.js` currently hard-codes port `8000` — this works fine on Railway, but if you ever want full compatibility with Railway's dynamic port assignment you can update the server to use `process.env.PORT || 8000`.
-    </Tip>
+    <Note>
+      `index.js` hard-codes `port: 8000` in `server.listen` and does not read `process.env.PORT`. Railway's reverse proxy handles external HTTPS traffic and forwards it to the container's internal port `8000`, so the hard-coded value works correctly without any changes.
+    </Note>
   </Step>
 
   <Step title="Add a custom domain (optional)">
@@ -70,7 +70,7 @@ Doge Unblocker is a standard Node.js/Express application and can be deployed on 
 <Tip>
   Regardless of which platform you choose, always verify that:
   1. The **start command** is `npm start` or `node index.js`.
-  2. The **port** is set to `8000` (or the platform's injected `PORT` environment variable is respected).
+  2. The platform routes external traffic to the container's internal **port `8000`**, which is hard-coded in `index.js`.
   3. Node.js **16 or later** is selected as the runtime version.
 
   Most platforms that support Node.js will deploy Doge Unblocker without any additional configuration beyond these three settings.

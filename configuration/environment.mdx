@@ -105,8 +105,8 @@ The table below consolidates every relevant environment-level setting for Doge U
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| PORT | `8000` | Server listen port, set in `server.listen()` in `index.js` |
-| NODE_ENV | `production` (Docker) | Node environment — controls Express error verbosity |
+| Listen port | `8000` | Hardcoded in `server.listen({ port: 8000 })` in `index.js` — not read from an environment variable |
+| `NODE_ENV` | `production` (Docker) | Node environment — controls Express error verbosity |
 | Node version | `>=16.0.0` | Minimum Node.js version (engines field in `package.json`) |
 | npm version | `>=7.0.0` | Minimum npm version (engines field in `package.json`) |
 
