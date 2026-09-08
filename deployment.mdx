@@ -1,0 +1,156 @@
+---
+title: "Deploy Doge Unblocker to the Cloud"
+sidebarTitle: "Deployment"
+description: "Deploy Doge Unblocker to Docker, Render, Vercel, Railway, Koyeb, or Cyclic with no database needed — just a Node.js 16+ runtime listening on port 8000."
+---
+
+Doge Unblocker is a stateless Node.js server with no database and no persistent file storage requirements, which makes it straightforward to deploy on virtually any cloud platform that can run a Node.js process. All configuration lives in the source files themselves, so no environment variables need to be set beyond what the platform provides automatically.
+
+<Warning>
+  Keep your deployment URL private. Sharing it broadly defeats the purpose of running your own proxy and may lead to your server being rate-limited, suspended, or blocked. As the project itself advises: **"It is not recommended to share this link with anyone."**
+</Warning>
+
+## Platform Overview
+
+<CardGroup cols={2}>
+  <Card title="Docker" icon="docker" href="/self-hosting/docker">
+    Run Doge Unblocker in a fully isolated container using the included `Dockerfile`. Works on any machine or VPS with Docker installed.
+  </Card>
+  <Card title="Render" icon="cloud" href="/self-hosting/render">
+    One-click deploy to Render's free tier using the included `render.yaml`. Render handles TLS, deploys from GitHub, and restarts the service automatically.
+  </Card>
+  <Card title="Vercel" icon="triangle" href="/self-hosting/vercel">
+    Deploy as a serverless Node.js function using the included `vercel.json`. Ideal for quick public deployments with automatic HTTPS.
+  </Card>
+  <Card title="Railway" icon="train" href="/self-hosting/railway">
+    Deploy directly from the GitHub repository using Railway's template link. Free starter tier available with automatic redeploys on push.
+  </Card>
+  <Card title="Koyeb" icon="server" href="https://app.koyeb.com/deploy?type=git&repository=github.com/dogenetwork/v4">
+    Deploy to Koyeb's global edge platform directly from the GitHub repository. Koyeb runs your app close to users worldwide.
+  </Card>
+  <Card title="Cyclic" icon="arrows-spin" href="https://app.cyclic.sh/api/app/deploy/dogenetwork/v4">
+    Deploy to Cyclic with a single click from the GitHub repository. Cyclic automatically builds and serves Node.js apps with no cold starts.
+  </Card>
+</CardGroup>
+
+<Note>
+  The Koyeb and Cyclic cards link directly to those platforms' deployment pages for the Doge Unblocker repository. You will be taken to an external site to complete the setup. Detailed step-by-step guides for Docker, Render, Vercel, and Railway are available in the **Self-Hosting** section of this documentation.
+</Note>
+
+## Platform Requirements
+
+Every deployment environment must meet the following minimum requirements:
+
+| Requirement | Value |
+|---|---|
+| **Node.js version** | ≥ 16.0.0 |
+| **npm version** | ≥ 7.0.0 |
+| **Exposed port** | 8000 |
+| **Persistent storage** | Not required |
+| **Environment variables** | None required |
+| **Build step** | None — `node index.js` runs directly |
+
+The server always binds to port **8000**. If your platform requires a different port via an environment variable (e.g. `PORT`), you will need to modify the `server.listen` call in `index.js` accordingly.
+
+## Quick Start Commands
+
+<Tabs>
+  <Tab title="Local (npm)">
+    Run Doge Unblocker directly on your machine after cloning the repository:
+
+    ```bash
+    # Clone the repo
+    git clone https://github.com/dogenetwork/doge-unblocker.git
+    cd doge-unblocker
+
+    # Install dependencies
+    npm install
+
+    # Start the server
+    npm start
+    ```
+
+    The start script (`npm start`) executes `node index.js` as defined in `package.json`. When the server is ready you will see:
+
+    ```
+    Doge Unblocker has sucessfully started!
+    Listening on localhost (Port 8000).
+    ```
+
+    Open your browser at `http://localhost:8000/app`.
+  </Tab>
+  <Tab title="Docker">
+    Build and run Doge Unblocker inside a Docker container using the included `Dockerfile`:
+
+    ```bash
+    # Build the image
+    docker build -t doge-unblocker .
+
+    # Run the container, mapping port 8000
+    docker run -p 8000:8000 doge-unblocker
+    ```
+
+    The `Dockerfile` uses the official `node:19-bullseye` base image, sets `NODE_ENV=production`, copies the source, installs dependencies, exposes port 8000, and starts the server with `npm start`:
+
+    ```dockerfile
+    # syntax=docker/dockerfile:1
+    FROM node:19-bullseye
+    ENV NODE_ENV=production
+    WORKDIR /app
+    COPY ["package.json", "package-lock.json*", "./"]
+    RUN npm install
+    EXPOSE 8000
+    COPY . .
+    CMD [ "npm", "start" ]
+    ```
+
+    After the container starts, open `http://localhost:8000/app` in your browser.
+  </Tab>
+</Tabs>
+
+## Render Configuration
+
+Render deployment is driven by the `render.yaml` file included in the repository:
+
+```yaml
+services:
+  - type: web
+    name: educational-website
+    env: node
+    plan: free
+    startCommand: npm install && node index.js
+```
+
+Render runs `npm install && node index.js` as the start command, automatically detects the Node.js environment, and provisions a free-tier web service with TLS included. To deploy, click the **Deploy to Render** button in the repository README or follow the [Render deployment guide](/self-hosting/render).
+
+## Vercel Configuration
+
+Vercel deployment is configured via `vercel.json`, which builds `index.js` with the `@vercel/node` runtime and routes all traffic to the root handler:
+
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "./index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
+  ]
+}
+```
+
+<Note>
+  Vercel's serverless runtime may impose request duration limits that affect long-lived WebSocket connections used by some proxied sites. For full WebSocket support, prefer a persistent runtime like Docker, Render, or Railway.
+</Note>
+
+## Next Steps
+
+- Follow the step-by-step [Docker guide](/self-hosting/docker) for advanced container configuration.
+- See the [Render guide](/self-hosting/render) for custom domain and environment setup.
+- Review [Stealth Tools](/features/stealth-tools) to configure tab cloaking and about:blank mode after deployment.

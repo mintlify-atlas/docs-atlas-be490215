@@ -1,0 +1,98 @@
+---
+title: "Ultraviolet Proxy Configuration Reference"
+sidebarTitle: "UV Config"
+description: "Complete reference for uv.config.js — every field that controls how Ultraviolet routes, encodes, and serves proxied content."
+---
+
+Ultraviolet's behaviour is driven by a single configuration object, `self.__uv$config`, defined in `static/uv/uv.config.js`. This file is loaded by the service worker at registration time, so every path and codec choice you make here must stay consistent with how the Express server registers its routes. The settings below control where proxied URLs are served, how they are encoded in the address bar, and which service worker scripts are loaded.
+
+## Full Configuration File
+
+The complete `static/uv/uv.config.js` as shipped with Doge Unblocker:
+
+```javascript
+self.__uv$config = {
+    prefix: '/service/',
+    bare: '/bare/',
+    encodeUrl: Ultraviolet.codec.xor.encode,
+    decodeUrl: Ultraviolet.codec.xor.decode,
+    handler: '/uv/uv.handler.js',
+    bundle: '/uv/uv.bundle.js',
+    config: '/uv/uv.config.js',
+    sw: '/uv/uv.sw.js',
+};
+```
+
+## Configuration Fields
+
+<ParamField path="prefix" type="string" default="/service/">
+  The URL path prefix prepended to every proxied request. When a user navigates to a site through Doge Unblocker, the proxied URL appears as `/service/<encoded-url>` in the address bar. This value must match the service worker's registered scope.
+</ParamField>
+
+<ParamField path="bare" type="string" default="/bare/">
+  The path to the TOMP bare server relay. Ultraviolet forwards all outbound HTTP and WebSocket traffic through this endpoint. This value must match the route registered in the Express server.
+</ParamField>
+
+<ParamField path="encodeUrl" type="function" default="Ultraviolet.codec.xor.encode">
+  The function used to encode destination URLs before they are embedded in the proxy path. The default, `Ultraviolet.codec.xor.encode`, applies XOR encoding so that target URLs are unrecognizable in the address bar and network request logs.
+</ParamField>
+
+<ParamField path="decodeUrl" type="function" default="Ultraviolet.codec.xor.decode">
+  The inverse of `encodeUrl`. Called by the service worker to recover the original destination URL from the encoded path segment. Must always be the matching decode function for whichever codec `encodeUrl` uses.
+</ParamField>
+
+<ParamField path="handler" type="string" default="/uv/uv.handler.js">
+  The path to the Ultraviolet service worker handler script. This file intercepts `fetch` events inside the service worker and rewrites requests and responses for the proxied origin.
+</ParamField>
+
+<ParamField path="bundle" type="string" default="/uv/uv.bundle.js">
+  The path to the compiled Ultraviolet bundle. This script is imported by the service worker and provides all runtime rewriting logic (HTML, CSS, JS, and headers).
+</ParamField>
+
+<ParamField path="config" type="string" default="/uv/uv.config.js">
+  The URL path at which this config file is served to the service worker. The service worker imports this path at runtime to read the same `__uv$config` object, so the path must be publicly accessible as a static file.
+</ParamField>
+
+<ParamField path="sw" type="string" default="/uv/uv.sw.js">
+  The path to the Ultraviolet service worker entry point. This is the file you register with `navigator.serviceWorker.register()` in the client. It imports `bundle`, `config`, and `handler` internally.
+</ParamField>
+
+## URL Encoding with XOR
+
+Doge Unblocker uses Ultraviolet's built-in XOR codec by default. When a user visits `https://example.com` through the proxy, the destination URL is XOR-encoded and placed in the browser's address bar as something like:
+
+```
+/service/aHR0cHM6Ly9leGFtcGxlLmNvbS8=
+```
+
+Because XOR encoding transforms every byte of the URL, the original hostname and path are completely hidden from casual inspection of the address bar and from any network-level URL logging that only captures the path portion of a request. The service worker decodes the path with `Ultraviolet.codec.xor.decode` before making the upstream fetch.
+
+<Note>
+  The bare server path (`/bare/`) must match the route registered in the Express server. In `index.js`, `createBareServer("/bare/")` and the `bareServer.shouldRoute(req)` check together ensure that all requests beginning with `/bare/` are handled by the bare server rather than Express. If you change `bare` in this config, you must update that string in `index.js` as well.
+</Note>
+
+## Changing the Proxy Prefix
+
+The `prefix` field is the most common value operators want to customise. Here is a before/after example of changing it from the default `/service/` to `/proxy/`:
+
+**Before (default):**
+
+```javascript
+self.__uv$config = {
+    prefix: '/service/',
+    // ...
+};
+```
+
+**After (custom prefix):**
+
+```javascript
+self.__uv$config = {
+    prefix: '/proxy/',
+    // ...
+};
+```
+
+<Warning>
+  Changing `prefix` alone is not sufficient. The service worker is registered with a scope that must cover the new prefix path. In `index.js` (or whichever client script calls `navigator.serviceWorker.register()`), update the `scope` option passed to `register()` so it matches the new prefix. If the scope does not cover the prefix, the service worker will not intercept proxied requests and the proxy will silently fail.
+</Warning>

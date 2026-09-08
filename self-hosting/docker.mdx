@@ -1,0 +1,120 @@
+---
+title: "Self-Host Doge Unblocker with Docker"
+sidebarTitle: "Docker"
+description: "Package and run Doge Unblocker in a Docker container with a single build command, keeping your deployment portable and fully self-contained."
+---
+
+Docker is the easiest way to run a fully isolated, reproducible instance of Doge Unblocker on any machine that supports containers. The included `Dockerfile` handles every dependency installation step for you, so there is no need to manage a local Node.js environment manually.
+
+## Dockerfile
+
+The repository ships with a production-ready `Dockerfile` at the project root. Here is the complete file for reference:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM node:19-bullseye
+ENV NODE_ENV=production
+WORKDIR /app
+COPY ["package.json", "package-lock.json*", "./"]
+RUN npm install
+EXPOSE 8000
+COPY . .
+CMD [ "npm", "start" ]
+```
+
+**What each line does:**
+
+| Instruction | Purpose |
+|---|---|
+| `FROM node:19-bullseye` | Bases the image on the official Node.js 19 image built on Debian Bullseye — a stable, well-supported Linux base. |
+| `ENV NODE_ENV=production` | Tells Express and other packages to apply production-mode optimisations (e.g. disabling verbose error output). |
+| `WORKDIR /app` | Sets `/app` as the working directory inside the container so all subsequent commands run there. |
+| `COPY package*.json ./` | Copies only the package manifests first, allowing Docker to cache the dependency layer separately. |
+| `RUN npm install` | Installs all production dependencies declared in `package.json`. |
+| `EXPOSE 8000` | Documents that the container listens on port `8000` — required for correct port mapping at runtime. |
+| `COPY . .` | Copies the rest of the source code into the container after dependencies are installed. |
+| `CMD ["npm", "start"]` | Runs `node index.js` via the `start` script when the container starts. |
+
+## Deploying with Docker
+
+<Steps>
+  <Step title="Clone the repository">
+    Pull the latest version of Doge Unblocker onto your machine:
+
+    ```bash
+    git clone https://github.com/DogeLeader/DogeUnblocker-v4.git
+    cd DogeUnblocker-v4
+    ```
+  </Step>
+
+  <Step title="Build the Docker image">
+    From inside the project directory, build the image and tag it as `doge-unblocker`:
+
+    ```bash
+    docker build -t doge-unblocker .
+    ```
+
+    Docker will pull the `node:19-bullseye` base image (if not already cached), install dependencies, and package everything into a single image layer. This typically takes one to two minutes on the first run.
+  </Step>
+
+  <Step title="Run the container">
+    Start a container from the image and map the container's port `8000` to your host:
+
+    ```bash
+    docker run -p 8000:8000 doge-unblocker
+    ```
+
+    To run the container in the background (detached mode) with an explicit name so it is easy to reference later:
+
+    ```bash
+    docker run -d -p 8000:8000 --name doge-unblocker doge-unblocker
+    ```
+
+    <Tip>
+      Running with `-d` keeps your terminal free. You can stream logs at any time with:
+
+      ```bash
+      docker logs -f doge-unblocker
+      ```
+
+      Stop the container with `docker stop doge-unblocker` and remove it with `docker rm doge-unblocker`.
+    </Tip>
+  </Step>
+
+  <Step title="Verify the deployment">
+    Open your browser and navigate to `http://localhost:8000`. You should see the Doge Unblocker interface. To confirm the server started correctly, check the container logs for:
+
+    ```
+    Doge Unblocker has sucessfully started!
+    Listening on localhost (Port 8000).
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The container exposes port `8000` internally. Use `-p <host-port>:8000` to serve on a different host port. For example, `-p 3000:8000` makes the proxy available at `http://localhost:3000` while the container still listens on `8000` internally.
+</Note>
+
+## Docker Compose
+
+For a more maintainable setup — especially if you plan to add other services alongside Doge Unblocker — use Docker Compose. Create a `docker-compose.yml` file in the project root with the following content:
+
+```yaml
+version: '3.8'
+services:
+  doge-unblocker:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+```
+
+Then start the stack with a single command:
+
+```bash
+docker compose up -d
+```
+
+The `restart: unless-stopped` policy ensures the container automatically restarts after a system reboot or unexpected crash. To stop the stack, run `docker compose down`.

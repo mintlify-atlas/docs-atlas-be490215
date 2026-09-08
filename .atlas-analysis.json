@@ -1,0 +1,84 @@
+{
+  "projectType": "saas",
+  "projectName": "Doge Unblocker",
+  "projectDescription": "A self-hosted web proxy application built on Node.js, Express, and Ultraviolet that bypasses network filters with tab cloaking, about:blank stealth, panic keys, and a built-in games and apps library.",
+  "theme": "luma",
+  "primaryColor": "#1A6ED8",
+  "lightColor": "#3B8EF0",
+  "darkColor": "#0D3A6E",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "deployment"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/web-proxy",
+              "features/tab-cloaking",
+              "features/stealth-tools",
+              "features/games-and-apps",
+              "features/themes-and-customization"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/uv-config",
+              "configuration/server-config",
+              "configuration/environment"
+            ]
+          },
+          {
+            "group": "Self-Hosting",
+            "pages": [
+              "self-hosting/docker",
+              "self-hosting/render",
+              "self-hosting/vercel",
+              "self-hosting/railway"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Ultraviolet-powered web proxy with XOR URL encoding via Service Workers",
+    "Tab cloaking (Google Drive, Docs, Google, Classroom presets)",
+    "About:blank cloaking (basic and advanced modes)",
+    "Clickoff cloaking — auto-disguises tab on focus loss",
+    "Panic key — instant redirect/hide on configurable hotkey",
+    "Leave confirmation to resist DyKnow/GoGuardian redirects",
+    "Built-in games library (Retro Bowl, Slope, Cookie Clicker, Krunker, and more)",
+    "Built-in apps library (YouTube, Discord, Netflix, Spotify, GitHub, etc.)",
+    "Customizable themes (Deep Sea, Swamp, Ocean, Starry, Magma, Sunset, Equinox)",
+    "Particle effects background system",
+    "Custom background URL support",
+    "One-click deploy to Railway, Render, Vercel, Koyeb, and Cyclic",
+    "Docker support for self-hosted deployments",
+    "Bare server (TOMP) for WebSocket proxying"
+  ],
+  "publicApiSurface": [
+    "GET / — Home page with proxy search bar",
+    "GET /app — Alias for the main proxy interface",
+    "GET /student — Proxy loader (Service Worker entrypoint)",
+    "GET /apps — Proxied apps library",
+    "GET /gms — Games library",
+    "GET /lessons — App/game loader (agloader)",
+    "GET /credits — Credits page",
+    "GET /partners — Partners page",
+    "GET /bare/* — TOMP bare server (HTTP + WebSocket proxy relay)",
+    "GET /service/* — Ultraviolet service worker prefix (proxied content)",
+    "uv.config: prefix, bare, encodeUrl, decodeUrl, handler, bundle, config, sw",
+    "functions.js: tabCloak(), disableTabCloak(), enableAboutBlank(), disableAboutBlank(), enableClickoffCloak(), disableClickoffCloak(), openWindow(), vSite(), vAG(), youtube()",
+    "settings.js: driveCloak(), docsCloak(), googleCloak(), classroomCloak(), savePK(), removePK(), saveBackground(), resetBackground(), enableParticles(), disableParticles(), leaveConf()"
+  ]
+}

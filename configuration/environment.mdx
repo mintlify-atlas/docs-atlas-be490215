@@ -1,0 +1,136 @@
+---
+title: "Environment and Runtime Requirements"
+sidebarTitle: "Environment"
+description: "Node.js version requirements, npm dependencies, Docker environment variables, and port settings for running Doge Unblocker."
+---
+
+Doge Unblocker is a lightweight Node.js application with a small set of hard dependencies and no runtime environment variables beyond what is noted below. Before deploying or making configuration changes, confirm that your host meets the engine requirements, understands the ES module constraint, and exposes the correct port. This page consolidates every environment-level setting sourced from `package.json`, the `Dockerfile`, and `index.js`.
+
+## Runtime Requirements
+
+Doge Unblocker's `package.json` declares the following minimum engine versions:
+
+<ParamField path="node" type="string" default=">=16.0.0">
+  Minimum Node.js version required to run Doge Unblocker. Node 16 introduced stable support for ES modules with `"type": "module"`, which the project depends on. Earlier versions will either refuse to start or silently misparse import syntax.
+</ParamField>
+
+<ParamField path="npm" type="string" default=">=7.0.0">
+  Minimum npm version required for installing dependencies. npm 7 introduced automatic installation of peer dependencies, which is relevant for `@tomphttp/bare-server-node`.
+</ParamField>
+
+## Dependencies
+
+Both runtime dependencies are listed in the `dependencies` field of `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@tomphttp/bare-server-node": "^1.2.6",
+    "express": "^4.18.2"
+  }
+}
+```
+
+<ParamField path="@tomphttp/bare-server-node" type="^1.2.6">
+  The TOMP HTTP bare server. This package handles all outbound proxied HTTP requests and WebSocket connections on behalf of the client. It is mounted at `/bare/` in `index.js` and is the core relay layer that makes Ultraviolet's service worker proxy functional.
+</ParamField>
+
+<ParamField path="express" type="^4.18.2">
+  The HTTP server framework used to define and serve all application routes. Express handles static file delivery, individual page routes, and the 404 fallback. It receives requests only after the bare server's `shouldRoute` check has returned `false`.
+</ParamField>
+
+Install all dependencies with:
+
+```bash
+npm install
+```
+
+## Module System
+
+`package.json` sets `"type": "module"`, which makes Node.js treat every `.js` file in the project as an ES module:
+
+```json
+{
+  "type": "module"
+}
+```
+
+This means:
+
+- Use `import` and `export` — not `require()` or `module.exports`.
+- Dynamic `import()` is available for lazy loading.
+- `__dirname` and `__filename` are not defined automatically; `index.js` works around this with `const __dirname = process.cwd()`.
+
+Any new server-side file you add must follow ES module syntax, or Node.js will throw an error at startup.
+
+## Environment Variables
+
+### `NODE_ENV`
+
+The `Dockerfile` sets `NODE_ENV=production` at image build time:
+
+```dockerfile
+ENV NODE_ENV=production
+```
+
+This tells Express (and any middleware that respects the convention) to disable development-only features such as detailed error stack traces in responses. When running locally for development, `NODE_ENV` defaults to `undefined` unless you set it explicitly.
+
+<Note>
+  Doge Unblocker does not use a `.env` file. There is no `dotenv` dependency and no `.env` loading code in `index.js`. Port and other runtime settings are configured directly as literals in `index.js`. To change a value, edit the source file rather than adding an environment variable.
+</Note>
+
+## Port
+
+The server binds to port **8000** by default, as defined in `index.js`:
+
+```javascript
+server.listen({
+  port: 8000,
+});
+```
+
+The `Dockerfile` exposes this port so container orchestrators and reverse proxies know which port to map:
+
+```dockerfile
+EXPOSE 8000
+```
+
+<Tip>
+  To run on a different port, edit the `port: 8000` literal in the `server.listen({...})` call at the bottom of `index.js`. If you are using Docker, also update the `-p` flag in your `docker run` command or the `ports` mapping in your `docker-compose.yml` to match.
+</Tip>
+
+## Settings Reference
+
+The table below consolidates every relevant environment-level setting for Doge Unblocker:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| PORT | `8000` | Server listen port, set in `server.listen()` in `index.js` |
+| NODE_ENV | `production` (Docker) | Node environment — controls Express error verbosity |
+| Node version | `>=16.0.0` | Minimum Node.js version (engines field in `package.json`) |
+| npm version | `>=7.0.0` | Minimum npm version (engines field in `package.json`) |
+
+## Starting the Server
+
+The `package.json` `start` script runs the server directly with Node:
+
+```json
+{
+  "scripts": {
+    "start": "node index.js"
+  }
+}
+```
+
+Run it with:
+
+```bash
+npm start
+```
+
+On a successful start you will see:
+
+```
+Doge Unblocker has sucessfully started!
+Listening on localhost (Port 8000).
+```

@@ -1,0 +1,75 @@
+---
+title: "Deploy Doge Unblocker on Render"
+sidebarTitle: "Render"
+description: "Deploy Doge Unblocker to Render's free tier in minutes using the included render.yaml — no CLI or manual configuration required."
+---
+
+Render is a fully managed cloud platform that can host Doge Unblocker as a persistent web service directly from your GitHub repository. The project includes a `render.yaml` blueprint that configures everything automatically, so deployment requires nothing more than connecting your repo and clicking deploy.
+
+## render.yaml
+
+The `render.yaml` file at the repository root is Render's Infrastructure-as-Code format. Here is the complete configuration used by Doge Unblocker:
+
+```yaml
+services:
+  - type: web
+    name: educational-website
+    env: node
+    plan: free
+    startCommand: npm install && node index.js
+```
+
+**Configuration breakdown:**
+
+| Field | Value | Meaning |
+|---|---|---|
+| `type` | `web` | Deploys as a long-running HTTP web service. |
+| `name` | `educational-website` | The display name shown in your Render dashboard. |
+| `env` | `node` | Tells Render to use a Node.js build environment. |
+| `plan` | `free` | Uses Render's no-cost hosting tier. |
+| `startCommand` | `npm install && node index.js` | Installs dependencies and starts the Express server on each deploy. |
+
+## Deploying to Render
+
+<Steps>
+  <Step title="Fork the repository">
+    Fork [DogeUnblocker-v4](https://github.com/DogeLeader/DogeUnblocker-v4) to your own GitHub account so Render can access it. You can also push the repository to a private GitHub repo if you prefer to keep your deployment URL private.
+  </Step>
+
+  <Step title="Create a new Web Service on Render">
+    Go to [render.com](https://render.com), sign in or create a free account, then click **New +** → **Web Service** from your dashboard.
+  </Step>
+
+  <Step title="Connect your GitHub repository">
+    Authorize Render to access your GitHub account and select the fork of `DogeUnblocker-v4`. Render will scan the repository for a `render.yaml` file.
+  </Step>
+
+  <Step title="Review the auto-detected configuration">
+    Because the repository contains `render.yaml`, Render pre-fills the service name, environment, plan, and start command for you. Confirm the settings look correct — no manual changes are needed.
+  </Step>
+
+  <Step title="Deploy the service">
+    Click **Create Web Service**. Render will clone your repo, install Node.js dependencies, and start `node index.js`. Once the build log shows:
+
+    ```
+    Doge Unblocker has sucessfully started!
+    Listening on localhost (Port 8000).
+    ```
+
+    your service is live on a URL like `https://educational-website.onrender.com`.
+  </Step>
+</Steps>
+
+<Note>
+  Render's free tier spins down a service after roughly 15 minutes of inactivity. The first request after an idle period can take 30–60 seconds while the service wakes up. Subsequent requests respond at normal speed. Upgrade to a paid plan to eliminate cold starts.
+</Note>
+
+## One-Click Deploy
+
+You can skip the manual steps above by using Render's one-click deploy link. This clones the official repository into your Render account and launches the configuration wizard automatically:
+
+[**Deploy to Render →**](https://render.com/deploy?repo=https://github.com/dogenetwork/doge-unblocker)
+
+<Tip>
+  To prevent your service from spinning down on the free tier, add a health-check endpoint or point an external uptime monitor (such as [UptimeRobot](https://uptimerobot.com)) at your `.onrender.com` URL. A ping every 10–14 minutes is enough to keep the service warm and avoid cold-start delays for real users.
+</Tip>

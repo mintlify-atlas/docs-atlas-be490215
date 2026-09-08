@@ -1,0 +1,152 @@
+---
+title: "Ultraviolet Web Proxy — How It Works"
+sidebarTitle: "Web Proxy"
+description: "A deep dive into how Doge Unblocker proxies any website through Ultraviolet, XOR URL encoding, a service worker, and a TOMP bare server."
+---
+
+Doge Unblocker routes every web request through [Ultraviolet](https://github.com/titaniumnetwork-dev/Ultraviolet), a powerful service-worker-based proxy engine. When you type a URL into the search bar, the client encodes it, registers a service worker, and seamlessly delivers the proxied page — all without any browser extensions or additional software.
+
+## Proxy Configuration
+
+The heart of the proxy is `uv.config.js`. This file is loaded on every page and exposes the `__uv$config` global that all client-side proxy code references.
+
+```javascript
+// static/uv/uv.config.js
+self.__uv$config = {
+    prefix: '/service/',
+    bare: '/bare/',
+    encodeUrl: Ultraviolet.codec.xor.encode,
+    decodeUrl: Ultraviolet.codec.xor.decode,
+    handler: '/uv/uv.handler.js',
+    bundle: '/uv/uv.bundle.js',
+    config: '/uv/uv.config.js',
+    sw: '/uv/uv.sw.js',
+};
+```
+
+| Field | Value | Purpose |
+|---|---|---|
+| `prefix` | `/service/` | URL prefix for all proxied requests |
+| `bare` | `/bare/` | Endpoint for the TOMP bare server |
+| `encodeUrl` | `xor.encode` | XOR-encodes the target URL before embedding it |
+| `decodeUrl` | `xor.decode` | XOR-decodes the URL inside the service worker |
+| `handler` | `/uv/uv.handler.js` | Service worker request handler |
+| `bundle` | `/uv/uv.bundle.js` | Bundled Ultraviolet runtime |
+| `config` | `/uv/uv.config.js` | Config file served to the service worker scope |
+| `sw` | `/uv/uv.sw.js` | The service worker script itself |
+
+## Client-Side Proxy Trigger
+
+When the user submits the proxy form on the home page (`/app` or `/`), `index.js` handles the submission:
+
+```javascript
+// static/assets/js/index.js
+const form = document.querySelector("form");
+const input = document.querySelector("input");
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  window.navigator.serviceWorker
+    .register("./sw.js", {
+      scope: __uv$config.prefix,
+    })
+    .then(() => {
+      let url = input.value.trim();
+      if (!isUrl(url)) url = "https://www.google.com/search?q=" + url;
+      else if (!(url.startsWith("https://") || url.startsWith("http://")))
+        url = "http://" + url;
+      localStorage.setItem("encodedUrl", __uv$config.encodeUrl(url));
+      location.href = "/student";
+    });
+});
+
+function isUrl(val = "") {
+  if (
+    /^http(s?):\/\//.test(val) ||
+    (val.includes(".") && val.substr(0, 1) !== " ")
+  )
+    return true;
+  return false;
+}
+```
+
+If the input is not a valid URL, it is automatically converted into a Google search query. The encoded URL is written to `localStorage` under the key `encodedUrl`, and the browser navigates to `/student`.
+
+## Server Routes
+
+The Express server in `index.js` defines all the application routes and connects the TOMP bare server:
+
+```javascript
+// index.js (server)
+import express from "express";
+import http from "node:http";
+import path from "node:path";
+import createBareServer from "@tomphttp/bare-server-node";
+
+const server = http.createServer();
+const app = express(server);
+const bareServer = createBareServer("/bare/");
+
+app.use(express.static(path.join(__dirname, "static")));
+
+app.get('/app',     (req, res) => res.sendFile('./static/index.html'));
+app.get('/student', (req, res) => res.sendFile('./static/loader.html'));
+app.get('/apps',    (req, res) => res.sendFile('./static/apps.html'));
+app.get('/gms',     (req, res) => res.sendFile('./static/gms.html'));
+app.get('/lessons', (req, res) => res.sendFile('./static/agloader.html'));
+app.get('/credits', (req, res) => res.sendFile('./static/credits.html'));
+app.get('/partners',(req, res) => res.sendFile('./static/partners.html'));
+
+app.use((req, res) => {
+  res.statusCode = 404;
+  res.sendFile('./static/404.html');
+});
+
+server.on("request", (req, res) => {
+  if (bareServer.shouldRoute(req)) {
+    bareServer.routeRequest(req, res);
+  } else {
+    app(req, res);
+  }
+});
+
+server.on("upgrade", (req, socket, head) => {
+  if (bareServer.shouldRoute(req)) {
+    bareServer.routeUpgrade(req, socket, head);
+  } else {
+    socket.end();
+  }
+});
+
+server.listen({ port: 8000 });
+```
+
+<Note>
+  WebSocket proxying is fully supported. The `server.on("upgrade", ...)` handler checks every upgrade request against the bare server — if it matches, the bare server handles the WebSocket handshake and tunnels the connection, enabling real-time sites like Discord and live-streaming platforms to function correctly through the proxy.
+</Note>
+
+## Full Proxying Flow
+
+<Steps>
+  <Step title="User submits a URL">
+    The user types a URL or search query into the proxy bar on `/` (or `/app`) and presses Enter. The `form` submit event fires in `index.js`.
+  </Step>
+  <Step title="URL is normalised and XOR-encoded">
+    The client checks whether the input looks like a URL using `isUrl()`. Plain text is turned into a Google search; bare domains get `http://` prepended. The final URL is encoded with `__uv$config.encodeUrl` (i.e., `Ultraviolet.codec.xor.encode`) to obfuscate it from network observers.
+  </Step>
+  <Step title="Encoded URL is saved to localStorage">
+    `localStorage.setItem("encodedUrl", __uv$config.encodeUrl(url))` persists the encoded destination so `loader.html` can retrieve it after the page navigation.
+  </Step>
+  <Step title="Service worker is registered">
+    Before navigating away, `navigator.serviceWorker.register("./sw.js", { scope: "/service/" })` ensures the Ultraviolet service worker is active and scoped to the `/service/` prefix.
+  </Step>
+  <Step title="Browser navigates to /student">
+    `location.href = "/student"` sends the browser to the loader page. The server responds with `loader.html`, which reads `encodedUrl` from localStorage and constructs the final proxied URL: `origin + "/service/" + encodedUrl`.
+  </Step>
+  <Step title="uv.sw.js intercepts the request">
+    All requests under `/service/` are intercepted by the registered `uv.sw.js` service worker. It XOR-decodes the URL, rewrites the request, and forwards it to the bare server at `/bare/`.
+  </Step>
+  <Step title="TOMP bare server fetches the resource">
+    The bare server (`@tomphttp/bare-server-node`) makes the outbound HTTP/HTTPS request on behalf of the browser and streams the response back through the service worker, which rewrites links and headers so the page renders correctly.
+  </Step>
+</Steps>

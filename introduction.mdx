@@ -1,0 +1,72 @@
+---
+title: "Doge Unblocker: A Self-Hosted Web Proxy Overview"
+sidebarTitle: "Introduction"
+description: "Doge Unblocker is a self-hosted web proxy on Node.js, Express, and Ultraviolet — bypassing network filters with stealth features and GPL-3.0 freedom."
+---
+
+Doge Unblocker is an open-source, self-hosted web proxy that lets you access blocked websites through your own server. Built on Node.js and Express, it leverages the [Ultraviolet](https://github.com/titaniumnetwork-dev/Ultraviolet) proxy engine and the TOMP bare server to rewrite and forward web traffic through a Service Worker — all without installing any browser extension.
+
+## What Is Doge Unblocker?
+
+Network filters and firewalls — common in schools, workplaces, and public networks — block access to websites by inspecting URLs and DNS requests. Doge Unblocker works around these restrictions by proxying traffic server-side and routing it through an obfuscated `/service/` path, making blocked sites appear as ordinary requests to your own domain.
+
+Every URL entered into the proxy bar is encoded using XOR encryption before being passed to the Ultraviolet Service Worker. The Service Worker intercepts fetch events and transparently forwards requests through the bare server (`/bare/`), then returns the response to the browser — without the target URL ever appearing in plain text in the network log.
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js ≥ 16 |
+| Web framework | Express 4 |
+| Proxy engine | Ultraviolet (Service Worker) |
+| Bare transport server | `@tomphttp/bare-server-node` |
+| URL encoding | XOR codec (`Ultraviolet.codec.xor`) |
+| License | GPL-3.0-or-later |
+
+## Current Version
+
+Doge Unblocker is currently on **version 4.4.7**. The project requires **Node.js ≥ 16.0.0** and **npm ≥ 7.0.0** to run.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Powerful Web Proxy" icon="globe" href="/features/web-proxy">
+    Access any blocked website through Ultraviolet's Service Worker engine with XOR-encoded URLs and bare-server transport.
+  </Card>
+  <Card title="Tab Cloaking" icon="eye-slash" href="/features/tab-cloaking">
+    Disguise the browser tab title and favicon to look like a trusted site — configurable from the Settings panel.
+  </Card>
+  <Card title="Stealth Tools" icon="shield-halved" href="/features/stealth-tools">
+    About:Blank cloaking, automatic URL cloaking, browser history hiding, and click-off cloaking keep your session discreet.
+  </Card>
+  <Card title="Apps & Games" icon="gamepad" href="/features/games-and-apps">
+    A built-in catalog of web apps and games accessible directly from the `/apps` route, no proxy bar required.
+  </Card>
+  <Card title="Customizable Themes" icon="palette" href="/features/themes-and-customization">
+    Choose from multiple color themes — Deep Sea, Ocean, Starry, Magma, Sunset, and more — in the Settings panel.
+  </Card>
+  <Card title="Right-Click Quick Menu" icon="computer-mouse" href="/features/stealth-tools">
+    Instantly access tab cloaking, about:blank mode, settings, and navigation controls from a custom context menu.
+  </Card>
+</CardGroup>
+
+## Get Started
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Clone the repo, install dependencies, and have the proxy running locally in under two minutes.
+  </Card>
+  <Card title="Deployment" icon="cloud" href="/deployment">
+    Deploy Doge Unblocker to Docker, Render, Vercel, Railway, Koyeb, or Cyclic with one click or a single command.
+  </Card>
+  <Card title="Web Proxy" icon="arrows-rotate" href="/features/web-proxy">
+    Learn how the Ultraviolet engine and bare server work together to proxy web traffic.
+  </Card>
+  <Card title="Tab Cloaking" icon="mask" href="/features/tab-cloaking">
+    Set up tab cloaking so your proxy session is hidden in plain sight.
+  </Card>
+</CardGroup>
+
+## License
+
+Doge Unblocker is released under the **GNU General Public License v3.0** (`GPL-3.0-or-later`). You are free to use, modify, and redistribute the software provided that derivative works are also distributed under the same license. See the `LICENSE` file in the repository for full terms.

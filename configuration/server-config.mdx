@@ -1,0 +1,154 @@
+---
+title: "Express Server Routes and Bare Server Setup"
+sidebarTitle: "Server Config"
+description: "How index.js wires together Express routes, the TOMP bare server relay, and WebSocket upgrade handling for Doge Unblocker."
+---
+
+Doge Unblocker's server is a thin Node.js HTTP server that delegates traffic between two handlers: an Express app that serves static pages and a TOMP bare server that relays proxied HTTP and WebSocket connections. Understanding how these two layers interact is essential before you add new routes, change existing paths, or move the server to a different port.
+
+## Full Server Code
+
+```javascript
+import express from "express";
+import http from "node:http";
+import path from "node:path";
+import createBareServer from "@tomphttp/bare-server-node";
+
+const __dirname = process.cwd();
+const server = http.createServer();
+const app = express(server);
+const bareServer = createBareServer("/bare/");
+
+app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
+app.use(express.static(path.join(__dirname, "static")));
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(process.cwd(), './static/index.html'));
+});
+app.get('/student', (req, res) => {
+  res.sendFile(path.join(process.cwd(), './static/loader.html'));
+});
+app.get('/apps', (req, res) => {
+  res.sendFile(path.join(process.cwd(), './static/apps.html'));
+});
+app.get('/gms', (req, res) => {
+  res.sendFile(path.join(process.cwd(), './static/gms.html'));
+});
+app.get('/lessons', (req, res) => {
+  res.sendFile(path.join(process.cwd(), './static/agloader.html'));
+});
+app.get('/credits', (req, res) => {
+  res.sendFile(path.join(process.cwd(), './static/credits.html'));
+});
+app.get('/partners', (req, res) => {
+  res.sendFile(path.join(process.cwd(), './static/partners.html'));
+});
+app.use((req, res) => {
+  res.statusCode = 404;
+  res.sendFile(path.join(process.cwd(), './static/404.html'))
+});
+
+server.on("request", (req, res) => {
+  if (bareServer.shouldRoute(req)) {
+    bareServer.routeRequest(req, res);
+  } else {
+    app(req, res);
+  }
+});
+
+server.on("upgrade", (req, socket, head) => {
+  if (bareServer.shouldRoute(req)) {
+    bareServer.routeUpgrade(req, socket, head);
+  } else {
+    socket.end();
+  }
+});
+
+server.on("listening", () => {
+  console.log(`Doge Unblocker has sucessfully started!\nListening on localhost (Port 8000).`);
+});
+
+server.listen({
+  port: 8000,
+});
+```
+
+## Route Reference
+
+| Route | Static File Served | Purpose |
+|-------|--------------------|---------|
+| `GET /app` | `static/index.html` | Main proxy interface |
+| `GET /student` | `static/loader.html` | Service worker proxy entrypoint |
+| `GET /apps` | `static/apps.html` | Apps catalogue page |
+| `GET /gms` | `static/gms.html` | GMS page |
+| `GET /lessons` | `static/agloader.html` | Lessons / AG loader page |
+| `GET /credits` | `static/credits.html` | Credits page |
+| `GET /partners` | `static/partners.html` | Partners page |
+| `GET /bare/*` | _(bare server relay)_ | TOMP bare server — HTTP proxy and WebSocket relay |
+| `GET *` _(catch-all)_ | `static/404.html` | 404 fallback for all unmatched routes |
+
+The `static/` directory is also served as a general static file tree via `express.static`, so assets (scripts, styles, images) are available at their natural paths without explicit route handlers.
+
+## Dual-Routing Pattern
+
+Rather than attaching Express directly to an HTTP server with `http.createServer(app)`, Doge Unblocker creates a bare `http.createServer()` and then manually decides which handler receives each request:
+
+```javascript
+server.on("request", (req, res) => {
+  if (bareServer.shouldRoute(req)) {
+    bareServer.routeRequest(req, res);
+  } else {
+    app(req, res);
+  }
+});
+```
+
+`bareServer.shouldRoute(req)` inspects the request URL and returns `true` when the path begins with `/bare/`. If that check passes, the request is handed off to the TOMP bare server, which makes the upstream HTTP request on the client's behalf and streams the response back. All other requests fall through to Express, where the standard route handlers and static middleware take over.
+
+This approach avoids conflicting Express middleware and ensures the bare server can intercept its traffic as early as possible in the request lifecycle.
+
+## WebSocket Upgrade Handling
+
+Proxied sites that use WebSockets (live chat, multiplayer games, real-time dashboards) require the bare server to handle the HTTP → WebSocket upgrade negotiation. Doge Unblocker wires this up via the `upgrade` event on the raw Node.js HTTP server:
+
+```javascript
+server.on("upgrade", (req, socket, head) => {
+  if (bareServer.shouldRoute(req)) {
+    bareServer.routeUpgrade(req, socket, head);
+  } else {
+    socket.end();
+  }
+});
+```
+
+When a browser sends an `Upgrade: websocket` request to `/bare/`, `bareServer.shouldRoute(req)` returns `true` and `bareServer.routeUpgrade` takes ownership of the socket, completing the WebSocket handshake with the upstream server. Any upgrade request that does not target `/bare/` has its socket closed immediately.
+
+## Port Configuration
+
+The server listens on port **8000** by default:
+
+```javascript
+server.listen({
+  port: 8000,
+});
+```
+
+The startup log confirms the address:
+
+```
+Doge Unblocker has sucessfully started!
+Listening on localhost (Port 8000).
+```
+
+<Tip>
+  To change the port, modify the `port` value in the `server.listen` call at the bottom of `index.js`. Remember to also update any reverse-proxy configuration (nginx, Caddy, etc.) or platform port mapping (Docker `EXPOSE`, Render, Vercel) to match.
+</Tip>
+
+<Note>
+  The server uses Node.js ES modules — `"type": "module"` is set in `package.json`. This means every file in the project uses `import` / `export` syntax. Do not use `require()` or `module.exports` when adding new code, as Node.js will throw a syntax error at startup.
+</Note>

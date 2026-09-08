@@ -1,0 +1,77 @@
+---
+title: "Deploy Doge Unblocker on Railway"
+sidebarTitle: "Railway"
+description: "Deploy Doge Unblocker to Railway in under two minutes — Railway auto-detects Node.js and runs npm start with no configuration files required."
+---
+
+Railway is a developer-focused cloud platform that makes deploying Node.js applications effortless. There are no configuration files to write and no build pipelines to set up — Railway inspects `package.json`, detects Node.js automatically, and runs `npm start` to launch the server. Doge Unblocker works out of the box with zero extra setup.
+
+## Deploying to Railway
+
+<Steps>
+  <Step title="Sign in to Railway with GitHub">
+    Go to [railway.app](https://railway.app) and click **Login**. Authenticate with your GitHub account so Railway can access your repositories.
+  </Step>
+
+  <Step title="Create a new project from your repository">
+    From your Railway dashboard, click **New Project** → **Deploy from GitHub repo**. If this is your first deployment, you may need to install the Railway GitHub App and grant access to your repositories.
+  </Step>
+
+  <Step title="Select your fork of DogeUnblocker-v4">
+    Search for and select your fork of `DogeUnblocker-v4`. Railway will begin analysing the repository immediately.
+  </Step>
+
+  <Step title="Railway auto-detects Node.js and starts the server">
+    Railway reads `package.json` and identifies the project as a Node.js application. It automatically uses the `start` script as the run command:
+
+    ```json
+    "scripts": {
+      "start": "node index.js"
+    }
+    ```
+
+    No `railway.json` or `Procfile` is needed. Railway installs dependencies with `npm install` and then runs `npm start` → `node index.js`.
+  </Step>
+
+  <Step title="Access your live deployment">
+    Once the build completes, Railway assigns your service a public URL in the format `https://<project-name>.up.railway.app`. Click **View Deployment** in the dashboard to open it.
+
+    <Tip>
+      Railway automatically injects a `PORT` environment variable into your application's runtime. `index.js` currently hard-codes port `8000` — this works fine on Railway, but if you ever want full compatibility with Railway's dynamic port assignment you can update the server to use `process.env.PORT || 8000`.
+    </Tip>
+  </Step>
+
+  <Step title="Add a custom domain (optional)">
+    In your Railway project settings, navigate to **Settings → Domains** and click **Add Custom Domain**. Enter your domain name and follow the DNS instructions provided. Railway handles TLS certificates automatically.
+  </Step>
+</Steps>
+
+<Note>
+  Railway's free tier includes **$5 of compute credits per month**, which is typically sufficient for a lightly used proxy instance. Usage is billed per minute of active CPU and memory consumption. Monitor your usage in the Railway dashboard to avoid unexpected charges if traffic grows.
+</Note>
+
+<Warning>
+  Keep your deployment URL private. Sharing it publicly — on social media, Discord servers, or public repositories — can attract heavy traffic that exhausts your free credits quickly and may lead to abuse reports that get the service suspended. Share the link only with intended users.
+</Warning>
+
+## Other Supported Platforms
+
+Doge Unblocker is a standard Node.js/Express application and can be deployed on any platform that supports running Node.js processes. The only requirements are Node.js 16 or later and the ability to run `npm start` or `node index.js` on port `8000`.
+
+<CardGroup cols={2}>
+  <Card title="Koyeb" icon="server" href="https://app.koyeb.com/deploy?type=git&repository=github.com/dogenetwork/v4">
+    Deploy to Koyeb using their Git-based deployment flow. Koyeb runs containers globally with automatic TLS and a generous free tier.
+  </Card>
+  <Card title="Cyclic" icon="rotate" href="https://app.cyclic.sh/api/app/deploy/dogenetwork/v4">
+    Deploy to Cyclic for a serverless Node.js hosting option. Cyclic auto-deploys from GitHub on every push with zero cold starts on paid plans.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Regardless of which platform you choose, always verify that:
+  1. The **start command** is `npm start` or `node index.js`.
+  2. The **port** is set to `8000` (or the platform's injected `PORT` environment variable is respected).
+  3. Node.js **16 or later** is selected as the runtime version.
+
+  Most platforms that support Node.js will deploy Doge Unblocker without any additional configuration beyond these three settings.
+</Tip>

@@ -1,0 +1,127 @@
+---
+title: "Tab Cloaking: Disguise Your Browser Tab"
+sidebarTitle: "Tab Cloaking"
+description: "Change your browser tab title and favicon to look like Google Drive, Docs, or Classroom to avoid detection in school environments."
+---
+
+Tab cloaking instantly replaces the browser tab's title and favicon with those of a familiar educational app, making the open tab look completely innocent at a glance. The chosen cloak persists across page reloads thanks to `localStorage`, so you only need to set it once per session.
+
+## How It Works
+
+Doge Unblocker stores two values in `localStorage` to drive tab cloaking:
+
+- **`cloakedTitle`** — the display name you have chosen (e.g., `"My Drive - Google Drive"`)
+- **`cloakedIcon`** — the URL of the favicon image for that app
+
+When `tabCloak()` is called, it copies those values into a second pair of keys:
+
+- **`tabTitle`** — the title that is immediately applied to `document.title`
+- **`tabIcon`** — the favicon href that is immediately applied to the `<link rel="icon">` element
+
+```javascript
+// static/assets/js/functions.js
+
+function tabCloak() {
+  var newTitle = localStorage.getItem('cloakedTitle');
+  var newIcon  = localStorage.getItem('cloakedIcon');
+
+  if (newTitle === null || newTitle === '') {
+    alert('No Cloak Detected. Please select one in settings.');
+  } else {
+    localStorage.setItem('tabTitle', newTitle);
+    localStorage.setItem('tabIcon',  newIcon);
+    document.title = newTitle;
+    var icon = document.querySelector('link[rel="icon"]');
+    icon.setAttribute('href', newIcon);
+  }
+}
+
+function disableTabCloak() {
+  var newTitle = 'Doge | V4';
+  var newIcon  = '/assets/img/doge.jpg';
+
+  localStorage.setItem('tabTitle', newTitle);
+  localStorage.setItem('tabIcon',  newIcon);
+
+  document.title = newTitle;
+  var icon = document.querySelector('link[rel="icon"]');
+  icon.setAttribute('href', newIcon);
+}
+```
+
+## Built-In Presets
+
+Four presets are available from `settings.js`. Each one writes the chosen title and icon into `cloakedTitle` / `cloakedIcon` and then immediately calls `tabCloak()` to apply the change.
+
+```javascript
+// static/assets/js/settings.js
+
+function driveCloak() {
+  localStorage.setItem('cloakedTitle', 'My Drive - Google Drive');
+  localStorage.setItem(
+    'cloakedIcon',
+    'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png'
+  );
+  tabCloak();
+}
+
+function docsCloak() {
+  localStorage.setItem('cloakedTitle', 'Google Docs');
+  localStorage.setItem('cloakedIcon', '/assets/img/docs.webp');
+  tabCloak();
+}
+
+function googleCloak() {
+  localStorage.setItem('cloakedTitle', 'Google');
+  localStorage.setItem('cloakedIcon', '/assets/img/google.webp');
+  tabCloak();
+}
+
+function classroomCloak() {
+  localStorage.setItem('cloakedTitle', 'Classes');
+  localStorage.setItem('cloakedIcon', '/assets/img/classroom-icon.webp');
+  tabCloak();
+}
+```
+
+| Preset | Tab Title | Favicon Source |
+|---|---|---|
+| Google Drive | `My Drive - Google Drive` | Google CDN (SSL) |
+| Google Docs | `Google Docs` | `/assets/img/docs.webp` |
+| Google | `Google` | `/assets/img/google.webp` |
+| Google Classroom | `Classes` | `/assets/img/classroom-icon.webp` |
+
+<Tip>
+  The **Google Classroom** cloak (`classroomCloak`) offers the highest credibility in a school environment — "Classes" is the exact title Classroom displays, and the rounded icon is immediately recognisable to teachers.
+</Tip>
+
+## Enabling and Disabling the Cloak
+
+### Via the Right-Click Context Menu
+
+Right-click anywhere on the page to open the custom context menu. Hover over **Tab Cloak** to expand the submenu, then choose **Enable** (applies the last saved preset) or **Disable** (restores the Doge tab identity).
+
+### Via the Settings Page
+
+Navigate to **Settings** (`/settings.html`) and click one of the four preset icon buttons in the **Tab Cloaking** section. The cloak is applied instantly.
+
+To remove the cloak, click the **None** button (the blank icon) on the same settings row, which calls `disableTabCloak()`.
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="Why doesn't the cloak stick after a full page refresh?">
+    The tab title and favicon are re-applied from the `tabTitle` and `tabIcon` keys in `localStorage` every time a page loads. As long as those keys are set (which `tabCloak()` ensures), the cloak will persist. If the tab reverts after a refresh, check that your browser is not set to clear `localStorage` on navigation, or that you are not browsing in a Private/Incognito window where storage is wiped at the end of the session.
+  </Accordion>
+  <Accordion title="Can I use a custom cloak that isn't one of the four presets?">
+    Yes — you can set any title and favicon URL you like by writing directly to `localStorage` in the browser console before calling `tabCloak()`:
+
+    ```javascript
+    localStorage.setItem('cloakedTitle', 'Khan Academy');
+    localStorage.setItem('cloakedIcon', 'https://www.khanacademy.org/favicon.ico');
+    tabCloak();
+    ```
+
+    Once those keys are saved, `tabCloak()` (available from the right-click menu) will apply your custom values on every subsequent call.
+  </Accordion>
+</AccordionGroup>

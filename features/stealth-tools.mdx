@@ -1,0 +1,189 @@
+---
+title: "Stealth Tools: Stay Hidden from Monitoring"
+sidebarTitle: "Stealth Tools"
+description: "Five built-in stealth tools — about:blank cloaking, clickoff disguise, a panic key, and leave confirmation — to evade school monitoring software."
+---
+
+Doge Unblocker includes a suite of stealth tools designed to keep you hidden from screen-monitoring and redirect-based classroom management software. Each tool is independent and can be toggled on or off at any time from the Settings page (`/settings.html`).
+
+## About:Blank Cloaking (Basic)
+
+The simplest stealth tool opens a brand-new browser window pointed at `about:blank`, embeds the current page as a full-screen `<iframe>` inside it, and then silently redirects the original tab to `classroom.google.com`. To a teacher or monitoring tool watching the tab bar, the original tab shows Classroom while the actual content lives in the new window.
+
+```javascript
+// static/assets/js/functions.js
+
+function openWindow() {
+  var win = window.open();
+  win.document.body.style.margin = '0';
+  win.document.body.style.height = '100vh';
+  var iframe = win.document.createElement('iframe');
+  iframe.style.border  = 'none';
+  iframe.style.width   = '100%';
+  iframe.style.height  = '100%';
+  iframe.style.margin  = '0';
+  iframe.src = window.location.href;
+  win.document.body.appendChild(iframe);
+}
+```
+
+This function is accessible from the right-click context menu (**About:Blank Cloak**) and from the Settings page (**Open Blanker** button).
+
+## Advanced About:Blank Cloaking
+
+The advanced variant takes the same concept further: it runs automatically on every page load (before the user has to click anything) by checking a flag in `localStorage`. When `aboutBlank` is set to `"enabled"`, the script detects that it is running in a top-level context (not already inside an iframe), opens an `about:blank` popup, embeds the page as a full-screen iframe, and navigates the original tab to `classroom.google.com` using `location.replace()` — which also removes the proxy URL from the browser's back-stack.
+
+```javascript
+// static/assets/js/functions.js
+
+var blankerCheck = localStorage.getItem('aboutBlank');
+
+if (blankerCheck === 'enabled') {
+  let inFrame;
+  try {
+    inFrame = window !== top;
+  } catch (e) {
+    inFrame = true;
+  }
+
+  if (!inFrame && !navigator.userAgent.includes("Firefox")) {
+    const popup = open("about:blank", "_blank");
+    if (!popup || popup.closed) {
+      alert("Please allow popups and redirects for about:blank cloak to work.");
+    } else {
+      const doc    = popup.document;
+      const iframe = doc.createElement("iframe");
+      const style  = iframe.style;
+      const link   = doc.createElement("link");
+      const name   = localStorage.getItem("name") || "My Drive - Google Drive";
+      const icon   = localStorage.getItem("icon") ||
+        "https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png";
+
+      doc.title  = name;
+      link.rel   = "icon";
+      link.href  = icon;
+
+      iframe.src        = location.href;
+      style.position    = "fixed";
+      style.top = style.bottom = style.left = style.right = 0;
+      style.border = style.outline = "none";
+      style.width  = style.height  = "100%";
+
+      doc.head.appendChild(link);
+      doc.body.appendChild(iframe);
+      location.replace("https://classroom.google.com");
+    }
+  }
+}
+
+function enableAboutBlank() {
+  localStorage.setItem('aboutBlank', 'enabled');
+  window.location.reload();
+}
+
+function disableAboutBlank() {
+  localStorage.setItem('aboutBlank', 'disabled');
+  window.location.reload();
+}
+```
+
+<Warning>
+  Advanced about:blank cloaking requires your browser to **allow popups and redirects** for the site. If the popup is blocked, the script will display an alert prompting you to update your browser's popup permissions. This feature is also **not supported on Firefox** due to how Firefox handles `about:blank` popup windows.
+</Warning>
+
+## Clickoff Cloaking
+
+Clickoff cloaking watches the browser's focus state. The moment you switch to another tab or window (`blur` event), the current tab automatically morphs to look like Google Docs, protecting you from a teacher who glances at your screen while you are away from the keyboard.
+
+```javascript
+// static/assets/js/settings.js
+
+function enableClickoffCloak() {
+  localStorage.setItem('clickoffCloak', 'enabled');
+  window.location.reload();
+}
+
+function disableClickoffCloak() {
+  localStorage.setItem('clickoffCloak', 'disabled');
+  window.location.reload();
+}
+```
+
+When `clickoffCloak` is `"enabled"`, the page attaches a `blur` listener that calls `docsCloak()` (setting the tab title to `"Google Docs"` and swapping the favicon), then restores the original tab appearance on `focus`. Enable or disable it using the **Clickoff Cloaking** toggle on the Settings page.
+
+## Panic Key
+
+The panic key lets you assign any keyboard key as an instant escape hatch. When that key is pressed anywhere on the page, the browser immediately navigates away from the proxy to a safe destination, hiding all evidence of proxy activity in under a second.
+
+```javascript
+// static/assets/js/settings.js
+
+function showPK() {
+  document.getElementById("panicPopup").style.display = "block";
+}
+
+function savePK() {
+  const pkKey = document.getElementById("panicPopup-input").value;
+  const pkErrorMessageDiv = document.getElementById("pkErrorMessage");
+  localStorage.setItem('pkKey', pkKey);
+  if (pkKey.trim() === "") {
+    pkErrorMessageDiv.style.display = "block";
+  } else {
+    closePK();
+    window.location.reload();
+  }
+}
+
+function removePK() {
+  localStorage.removeItem("pkKey");
+  window.location.reload();
+}
+```
+
+The chosen key is saved to `localStorage` under the key `pkKey`. On every page load, Doge Unblocker registers a `keydown` listener; if the pressed key matches `pkKey`, it redirects immediately.
+
+<Tip>
+  Choose an unusual key combination — such as `F2` or `Insert` — that you would never press by accident during normal browsing. Avoid common keys like `Escape` or `Backspace` that fire in many everyday interactions.
+</Tip>
+
+## Leave Confirmation
+
+The leave confirmation feature sets `window.onbeforeunload` to return a non-empty string, which causes the browser to show a native "Are you sure you want to leave?" dialog whenever something tries to navigate or close the tab. This is particularly effective against **DyKnow** and **GoGuardian**, which attempt to forcibly redirect student browsers.
+
+```javascript
+// static/assets/js/functions.js
+
+var leaveConf = localStorage.getItem("leaveConfirmation");
+
+if (leaveConf === 'enabled') {
+  window.onbeforeunload = function() {
+    return '';
+  }
+}
+```
+
+```javascript
+// static/assets/js/settings.js
+
+function leaveConf() {
+  var confCheck = localStorage.getItem('leaveConfirmation');
+  if (confCheck !== 'enabled') {
+    localStorage.setItem('leaveConfirmation', 'enabled');
+  } else {
+    localStorage.setItem('leaveConfirmation', 'disabled');
+  }
+  window.location.reload();
+}
+```
+
+Toggle it on or off with the **Toggle** button in the **Leave Confirmation** section of Settings. The state is stored in `localStorage` under the key `leaveConfirmation`.
+
+## Tool Comparison
+
+| Tool | Hides from tab-bar monitoring | Defeats forced redirects | Works on blur/alt-tab | Auto-activates on load |
+|---|:---:|:---:|:---:|:---:|
+| About:Blank (Basic) | ✅ | ❌ | ❌ | ❌ |
+| Advanced About:Blank | ✅ | ✅ | ❌ | ✅ |
+| Clickoff Cloaking | ✅ | ❌ | ✅ | ✅ |
+| Panic Key | ✅ | ❌ | ❌ | ✅ |
+| Leave Confirmation | ❌ | ✅ | ❌ | ✅ |

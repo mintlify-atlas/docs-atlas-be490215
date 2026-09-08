@@ -1,0 +1,200 @@
+---
+title: "Games and Apps Library in Doge Unblocker"
+sidebarTitle: "Games & Apps"
+description: "Browse 23 proxied web apps at /apps and 35+ unblocked games at /gms — all loaded through Ultraviolet with lazy-loading and instant search."
+---
+
+Doge Unblocker ships two dedicated library pages — `/apps` for web applications and `/gms` for browser games. Every entry is routed through the Ultraviolet proxy, so no direct connection is ever made from your device to the destination service. Both pages use an `IntersectionObserver`-based lazy-loader so only visible cards are rendered, keeping page load times fast even with large catalogues.
+
+<Note>
+  All apps and games are proxied through Ultraviolet. Your browser never connects directly to the destination — every request passes through the bare server at `/bare/`, masking the true destination from network-level filters.
+</Note>
+
+## Web Apps (`/apps`)
+
+The apps page is served at the `/apps` route and populated dynamically by `apps.js`. Each entry is registered in the `apps` object and then injected into the DOM by `addApp()`.
+
+### App Catalogue
+
+<CardGroup cols={4}>
+  <Card title="Google" icon="google" />
+  <Card title="ChatGPT" icon="robot" />
+  <Card title="Gemini" icon="sparkles" />
+  <Card title="Discord" icon="discord" />
+  <Card title="Twitter / X" icon="x-twitter" />
+  <Card title="Reddit" icon="reddit" />
+  <Card title="Pinterest" icon="pinterest" />
+  <Card title="CoolMath Games" icon="calculator" />
+  <Card title="CrazyGames" icon="gamepad" />
+  <Card title="Y8 Games" icon="gamepad" />
+  <Card title="Neal.fun" icon="wand-magic-sparkles" />
+  <Card title="GeForce Now" icon="cloud" />
+  <Card title="Now.GG" icon="mobile" />
+  <Card title="Chess.com" icon="chess" />
+  <Card title="Symbolab Math Solver" icon="square-root-variable" />
+  <Card title="YouTube" icon="youtube" />
+  <Card title="Netflix" icon="film" />
+  <Card title="SFlix" icon="clapperboard" />
+  <Card title="Twitch" icon="twitch" />
+  <Card title="TikTok" icon="music" />
+  <Card title="Spotify" icon="spotify" />
+  <Card title="GitHub" icon="github" />
+  <Card title="Visual Studio Code" icon="code" />
+</CardGroup>
+
+### How `addApp()` Works
+
+Each app card is created programmatically so new entries can be added to the `apps` object without touching any HTML:
+
+```javascript
+// static/assets/js/apps.js
+
+function addApp(name, imageUrl, onClickFunction, width, height) {
+  var appContainer = document.getElementById('appContainer');
+  var linkElement  = document.createElement('a');
+  linkElement.href      = "#";
+  linkElement.className = "square_btn";
+  linkElement.onclick   = onClickFunction;
+
+  if (width)  linkElement.style.width  = width  + 'px';
+  if (height) linkElement.style.height = height + 'px';
+
+  var imageElement       = document.createElement('img');
+  imageElement.className = "rounded";
+  imageElement.src       = imageUrl;
+  imageElement.alt       = name;
+  imageElement.draggable = false;
+
+  var brElement   = document.createElement('br');
+  var textElement = document.createTextNode(name);
+
+  linkElement.appendChild(imageElement);
+  linkElement.appendChild(brElement);
+  linkElement.appendChild(textElement);
+
+  appContainer.appendChild(linkElement);
+}
+```
+
+The `apps` object maps each app name to its icon path, click handler function, and optional `width`/`height` overrides (used by tall cards like Symbolab and VS Code).
+
+### Lazy-Loading with IntersectionObserver
+
+`loadApps()` is called once the page is ready. It attaches an `IntersectionObserver` to every `.square_btn` element and only adds the `loaded` CSS class (which triggers the fade-in animation) when a card scrolls into the viewport:
+
+```javascript
+// static/assets/js/apps.js
+
+function loadApps() {
+  const squareBtns = document.querySelectorAll('.square_btn');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        loadSquareBtn(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  });
+
+  squareBtns.forEach(btn => observer.observe(btn));
+}
+
+function loadSquareBtn(btn) {
+  btn.classList.add('loaded');
+}
+```
+
+### Search
+
+The apps page includes a live search bar (`#searchApps`). As you type, it filters the visible app cards by their inner text in real time:
+
+```javascript
+// static/assets/js/apps.js
+
+document.getElementById('searchApps').addEventListener('input', function(event) {
+  const query = this.value.toLowerCase();
+  const links = document.getElementsByClassName('search-results')[0]
+                        .getElementsByTagName('a');
+  let foundResults = false;
+
+  for (let i = 0; i < links.length; i++) {
+    const link     = links[i];
+    const linkText = link.innerText.toLowerCase();
+    if (linkText.includes(query)) {
+      link.style.display = 'block';
+      foundResults = true;
+    } else {
+      link.style.display = 'none';
+    }
+  }
+
+  const message = document.getElementById('searchMessage');
+  if (!foundResults) {
+    message.innerText      = 'No Results Found.';
+    message.style.display  = 'block';
+  } else {
+    message.style.display  = 'none';
+  }
+});
+```
+
+## Browser Games (`/gms`)
+
+The games page is served at the `/gms` route. Selecting a game stores its URL in `localStorage` under the key `agUrl` and redirects to `/lessons`, where `agloader.html` reads that value and loads the game in a full-screen frame.
+
+### Game Catalogue
+
+| # | Game | # | Game |
+|---|---|---|---|
+| 1 | Slope | 19 | Time Shooter 3 |
+| 2 | Krunker | 20 | 1v1.lol |
+| 3 | Cookie Clicker | 21 | Territorial.io |
+| 4 | Retro Bowl | 22 | Crowd Run 3D |
+| 5 | Run 3 | 23 | Tall Man Run |
+| 6 | Drift Hunters | 24 | Temple Run |
+| 7 | Basket Bros | 25 | Super Buddy Kick |
+| 8 | Basket Random | 26 | Drive Mad |
+| 9 | Subway Surfers | 27 | Poki |
+| 10 | Moto X3M | 28 | Florr.io |
+| 11 | Paper.io | 29 | Jstris |
+| 12 | Hole.io | 30 | Eaglercraft |
+| 13 | Fireboy and Watergirl | 31 | Monkey Mart |
+| 14 | Idle Breakout | 32 | BitLife |
+| 15 | OvO | 33 | Boxel Rebound |
+| 16 | VEX 8 | 34 | Doge Miner 2 |
+| 17 | 2048 | 35 | There Is No Game |
+| 18 | Suika Game | | |
+
+### How Games Are Launched (`agloader.html`)
+
+When you click a game on `/gms`, the game's URL is written to `localStorage`:
+
+```javascript
+// Pattern used on the /gms page for each game tile
+localStorage.setItem('agUrl', gameUrl);
+location.href = '/lessons';
+```
+
+The server routes `/lessons` to `agloader.html`, which reads `agUrl` from `localStorage` and injects it as the `src` of a full-screen `<iframe>`. The `vAG()` function in `functions.js` allows the right-click context menu to re-open the last visited game directly:
+
+```javascript
+// static/assets/js/functions.js
+
+function vAG() {
+  var checkHistory = localStorage.getItem('agUrl');
+  if (checkHistory !== null) {
+    location.href = '/lessons';
+  } else {
+    alert('Could not find a previously visited app/game, visit one first!');
+  }
+}
+```
+
+## Navigation Summary
+
+| Destination | Route | Contents |
+|---|---|---|
+| Web Apps | `/apps` | 23 proxied web applications |
+| Browser Games | `/gms` | 35+ unblocked browser games |
+| Game / App Loader | `/lessons` | Full-screen iframe loader for games and apps |

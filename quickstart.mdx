@@ -1,47 +1,138 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Doge Unblocker"
+sidebarTitle: "Quickstart"
+description: "Run Doge Unblocker locally in under two minutes: clone the repo, install dependencies, start the server, and browse blocked sites through the proxy."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+Doge Unblocker runs as a standard Node.js web server and has no external database or build step — getting it running locally takes less than two minutes. All you need is a terminal, Git, Node.js 16 or later, and npm 7 or later.
 
 ## Prerequisites
 
-Before you begin, you must have:
+| Requirement | Minimum version |
+|---|---|
+| Node.js | 16.0.0 |
+| npm | 7.0.0 |
+| Git | Any recent version |
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+## Local Setup
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Clone the repository">
+    Open a terminal and clone the Doge Unblocker source to your machine:
 
     ```bash
-    npm install your-package
+    git clone https://github.com/dogenetwork/doge-unblocker.git
+    cd doge-unblocker
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+
+  <Step title="Install dependencies">
+    Install the two runtime dependencies — Express and the TOMP bare server:
 
     ```bash
-    your-cli init
+    npm install
     ```
+
+    This installs `express` and `@tomphttp/bare-server-node` as defined in `package.json`. No build or compile step is needed.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+
+  <Step title="Start the server">
+    Launch the server with the npm start script, which runs `node index.js` directly:
 
     ```bash
-    your-cli start
+    npm start
     ```
+
+    When the server is ready you will see this message in your terminal:
+
+    ```
+    Doge Unblocker has sucessfully started!
+    Listening on localhost (Port 8000).
+    ```
+
+    The server binds to port **8000** and starts two listeners:
+    - The **Express app** handles all standard page routes (`/app`, `/student`, `/apps`, `/gms`, and others).
+    - The **bare server** (`/bare/`) handles proxied HTTP and WebSocket upgrade requests from the Ultraviolet Service Worker.
+  </Step>
+
+  <Step title="Open the app in your browser">
+    Navigate to the home page:
+
+    ```
+    http://localhost:8000/app
+    ```
+
+    <Note>
+      Doge Unblocker automatically redirects any `http://` request to `https://` when accessed over the public internet. For local development on `localhost` this redirect does not apply, so `http://localhost:8000/app` will load normally.
+    </Note>
+  </Step>
+
+  <Step title="Enter a URL or search query">
+    Type any website URL or a plain search phrase into the proxy bar and press **Enter**.
+
+    Here is what happens under the hood when you submit the form:
+
+    1. **Service Worker registration** — the browser registers `sw.js` scoped to the `/service/` prefix defined in `uv.config.js`.
+    2. **URL resolution** — if your input looks like a URL (contains a dot or starts with `http`), it is used as-is. Otherwise it becomes a Google search: `https://www.google.com/search?q=your+query`. Bare hostnames like `example.com` are prefixed with `http://` automatically.
+    3. **XOR encoding** — the resolved URL is encoded with `Ultraviolet.codec.xor.encode()` and stored in `localStorage` as `encodedUrl`.
+    4. **Redirect to `/student`** — the browser navigates to `/student`, which loads the proxy viewer (`loader.html`). The loader reads `encodedUrl` from `localStorage`, decodes it, and injects the proxied page into a full-screen iframe via the `/service/` route.
+
+    ```js
+    // Simplified logic from static/assets/js/index.js
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      window.navigator.serviceWorker
+        .register("./sw.js", { scope: __uv$config.prefix })
+        .then(() => {
+          let url = input.value.trim();
+          if (!isUrl(url)) url = "https://www.google.com/search?q=" + url;
+          else if (!(url.startsWith("https://") || url.startsWith("http://")))
+            url = "http://" + url;
+          localStorage.setItem("encodedUrl", __uv$config.encodeUrl(url));
+          location.href = "/student";
+        });
+    });
+    ```
+
+    The Ultraviolet configuration used for encoding and routing is loaded from `static/uv/uv.config.js`:
+
+    ```js
+    // static/uv/uv.config.js
+    self.__uv$config = {
+      prefix: '/service/',
+      bare: '/bare/',
+      encodeUrl: Ultraviolet.codec.xor.encode,
+      decodeUrl: Ultraviolet.codec.xor.decode,
+      handler: '/uv/uv.handler.js',
+      bundle: '/uv/uv.bundle.js',
+      config: '/uv/uv.config.js',
+      sw: '/uv/uv.sw.js',
+    };
+    ```
+
+    <Tip>
+      Right-click anywhere on the page to open the **quick menu**. From there you can enable tab cloaking, switch to about:blank mode, open Settings, navigate back to the last proxied site, or go to the apps and games library — all without returning to the home screen.
+    </Tip>
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Available Routes
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+Once the server is running, the following routes are available:
+
+| Route | Description |
+|---|---|
+| `/app` | Main home page with the proxy search bar |
+| `/student` | Proxy viewer — loads the last encoded URL |
+| `/apps` | Web apps and games catalog |
+| `/gms` | Games section |
+| `/lessons` | Arcade games loader |
+| `/credits` | Credits page |
+| `/partners` | Partners page |
+| `/bare/` | TOMP bare server endpoint (used internally by Ultraviolet) |
+
+## What's Next?
+
+- **Deploy to the cloud** — see the [Deployment guide](/deployment) to host Doge Unblocker on Render, Railway, Docker, Vercel, and more.
+- **Stealth features** — learn about tab cloaking, about:blank mode, and history hiding in [Stealth Tools](/features/stealth-tools).
+- **Theming** — personalize the interface with custom color themes and backgrounds in [Themes](/features/themes-and-customization).

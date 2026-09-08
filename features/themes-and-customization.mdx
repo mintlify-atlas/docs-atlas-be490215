@@ -1,0 +1,184 @@
+---
+title: "Themes and Customization in Doge Unblocker"
+sidebarTitle: "Themes"
+description: "Choose from seven built-in themes, toggle animated particles, or set a custom background image — all saved instantly to localStorage."
+---
+
+Doge Unblocker lets you personalise every page with seven distinct colour themes, an animated particle overlay, and a custom background image. All preferences are written to `localStorage` and applied by `themes.js` on every page load — no server round-trip required.
+
+<Tip>
+  Enable the particle effect for the best visual experience on gradient themes like Deep Sea, Swamp, Magma, and Sunset. The **Equinox** theme uses its own photographic background image, so particles are redundant there and can be left off.
+</Tip>
+
+## Themes
+
+Themes are selected from the dropdown on the Settings page (`/settings.html`). The chosen value is written to `localStorage` under the key `selectedOption`, and `themes.js` reads that key on every page load to apply the corresponding CSS to `document.body`.
+
+### Deep Sea (Default)
+
+The default theme. A dark navy-to-black gradient that gives the proxy its signature look.
+
+```javascript
+// themes.js — deepsea
+document.body.style.background =
+  "linear-gradient(to bottom right, rgb(16, 52, 82), rgb(9, 34, 55), black)";
+// Container overlay colour: rgba(19, 34, 48, 0.8)
+```
+
+### Swamp
+
+A dark forest-green gradient that fades to black.
+
+```javascript
+// themes.js — swamp
+document.body.style.background =
+  "linear-gradient(to bottom, rgb(33, 116, 47), rgb(0, 0, 0)";
+// Container overlay colour: rgba(22, 46, 23, 0.859)
+```
+
+### Ocean
+
+A bright baby-blue gradient that transitions through sandy gold.
+
+```javascript
+// themes.js — ocean
+document.body.style.background =
+  "linear-gradient(to bottom, rgb(70, 173, 214), rgb(99, 84, 36))";
+// Container overlay colour: rgba(84, 137, 161, 0.637)
+```
+
+### Starry
+
+A vivid blue-to-purple gradient — perfect for a cosmic feel.
+
+```javascript
+// themes.js — starry
+document.body.style.background =
+  "linear-gradient(to right, rgb(14, 132, 211), rgb(113, 11, 209)";
+// Container overlay: semi-transparent purple-blue blend
+```
+
+### Magma
+
+A high-contrast black-to-fiery-red gradient.
+
+```javascript
+// themes.js — magma
+document.body.style.background =
+  "linear-gradient(to right, rgb(0, 0, 0), rgb(223, 59, 10)";
+```
+
+### Sunset
+
+A warm orange-to-deep-purple gradient that mirrors a setting sun.
+
+```javascript
+// themes.js — sunset
+document.body.style.background =
+  "linear-gradient(to bottom, rgb(211, 112, 19), rgb(92, 16, 179))";
+```
+
+### Equinox
+
+Instead of a CSS gradient, Equinox uses a photographic background image (`/assets/img/equinox.webp`) with a darkened navbar and frosted-glass inputs.
+
+```javascript
+// themes.js — equinox
+document.body.style.backgroundImage = "url('/assets/img/equinox.webp')";
+document.body.style.backgroundSize  = "cover";
+
+// Navbar override
+navElement.style.backgroundColor = 'rgba(20, 20, 20, 0.871)';
+navElement.style.border          = '1px solid rgba(39, 39, 39, 0.575)';
+navElement.style.boxShadow       = '0 0 8px rgba(255, 255, 255, 0.267)';
+
+// Input override
+inputElement.style.backgroundColor = 'rgba(15, 15, 15, 0.89)';
+inputElement.style.boxShadow       = '0 0 1px rgba(255, 255, 255, 0.267)';
+```
+
+## How to Switch Themes
+
+<Steps>
+  <Step title="Open Settings">
+    Click the **Settings** button in the top navigation bar, or right-click anywhere and choose **View all Settings**.
+  </Step>
+  <Step title="Choose a theme">
+    Scroll to the **Themes** section and select a theme from the dropdown. The `change` event writes the value to `localStorage['selectedOption']` immediately.
+  </Step>
+  <Step title="Save">
+    Click the **Save** button. The page reloads and `themes.js` applies the new theme.
+  </Step>
+</Steps>
+
+## Particles
+
+The animated particle overlay adds a subtle floating-dots effect over the background gradient. It is controlled by the `particles` key in `localStorage`.
+
+```javascript
+// static/assets/js/settings.js
+
+function enableParticles() {
+  localStorage.setItem('particles', 'enabled');
+  window.location.reload();
+}
+
+function disableParticles() {
+  localStorage.setItem('particles', 'disabled');
+  window.location.reload();
+}
+```
+
+Toggle particles with the **Enable / Disable** buttons in the **Particles** section of Settings. Note that the button labels are intentionally inverted in the source code — clicking the **Enable** button calls `disableParticles()` internally (the CSS class controls visibility, so the logic is flipped). The Settings UI handles this transparently.
+
+## Custom Background
+
+You can replace any theme gradient with a custom background image by providing a direct image URL.
+
+```javascript
+// static/assets/js/settings.js
+
+function saveBackground() {
+  const backgroundUrl = document.getElementById("backgroundPopup-input").value;
+  if (backgroundUrl.trim() === "") {
+    document.getElementById("bgErrorMessage").style.display = "block";
+  } else {
+    localStorage.setItem("bgUrl",    backgroundUrl);
+    localStorage.setItem('bgCheck', 'on');
+    window.location.reload();
+  }
+}
+
+function resetBackground() {
+  localStorage.setItem("bgUrl",   'none');
+  localStorage.setItem('bgCheck', 'off');
+  window.location.reload();
+}
+```
+
+When `bgCheck` is `"on"`, `themes.js` skips all gradient logic and applies `bgUrl` directly as `document.body.style.backgroundImage`. It also removes the `#particles-js` element, since the particle canvas would obscure the custom image:
+
+```javascript
+// static/assets/js/themes.js — background check (DOMContentLoaded)
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (bgUrl === 'none' || bgUrl === null || bgUrl === '') {
+    console.log('No custom background set.');
+  } else {
+    document.body.style.backgroundImage = `url(${bgUrl})`;
+    document.getElementById('particles-js').remove();
+  }
+});
+```
+
+To set a custom background, click **Set Background** in the **Background** section of Settings, paste a full image URL (including `https://`), and click **Save**. To restore the active theme, click **Remove**.
+
+## localStorage Reference
+
+| Key | Possible Values | Description |
+|---|---|---|
+| `selectedOption` | `deepsea`, `swamp`, `ocean`, `starry`, `magma`, `sunset`, `equinox` | Active theme identifier |
+| `particles` | `enabled`, `disabled` | Whether the particle overlay is shown |
+| `bgUrl` | Any URL string, or `none` | Custom background image URL |
+| `bgCheck` | `on`, `off` | Whether the custom background is active |
+| `bgsUrl` | Any URL string | Staging copy of the background URL (set during popup) |

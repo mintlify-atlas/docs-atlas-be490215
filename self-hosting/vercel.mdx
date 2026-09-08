@@ -1,0 +1,79 @@
+---
+title: "Deploy Doge Unblocker on Vercel"
+sidebarTitle: "Vercel"
+description: "Deploy Doge Unblocker to Vercel as a serverless Node.js function using the included vercel.json with automatic route handling for all proxy paths."
+---
+
+Vercel can host Doge Unblocker as a serverless Node.js application using the `@vercel/node` runtime. The repository ships with a `vercel.json` configuration file that handles all routing automatically — every incoming path, including proxy-specific routes like `/student` and `/bare/*`, is funnelled through `index.js`.
+
+## vercel.json
+
+The `vercel.json` file at the repository root controls how Vercel builds and routes the application. Here is the complete configuration:
+
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "./index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
+  ]
+}
+```
+
+**Configuration breakdown:**
+
+| Field | Value | Meaning |
+|---|---|---|
+| `version` | `2` | Uses the current Vercel platform API version. |
+| `builds[].src` | `./index.js` | Identifies the entry point to compile as a serverless function. |
+| `builds[].use` | `@vercel/node` | Wraps the Express app in Vercel's Node.js serverless runtime. |
+| `routes[].src` | `/(.*)`  | Matches every incoming request path. |
+| `routes[].dest` | `/` | Forwards all matched paths to the root function (`index.js`). |
+
+<Note>
+  The wildcard route `"src": "/(.*)", "dest": "/"` is essential for Doge Unblocker. Without it, Vercel would treat paths like `/student`, `/apps`, `/bare/*`, and `/lessons` as separate static assets and return 404 errors. The route ensures every request reaches `index.js`, where Express handles dispatch.
+</Note>
+
+## Deploying to Vercel
+
+<Steps>
+  <Step title="Fork the repository">
+    Fork [DogeUnblocker-v4](https://github.com/DogeLeader/DogeUnblocker-v4) to your own GitHub account. Vercel requires repository access to set up automatic deployments on every push.
+  </Step>
+
+  <Step title="Import the project on Vercel">
+    Go to [vercel.com](https://vercel.com), sign in or create a free account, and click **Add New… → Project**. Select **Import Git Repository** and choose your fork of `DogeUnblocker-v4`.
+  </Step>
+
+  <Step title="Confirm vercel.json is detected">
+    Vercel automatically reads `vercel.json` from the repository root and pre-configures the build settings. You should see `index.js` listed as the build source and `@vercel/node` as the runtime.
+  </Step>
+
+  <Step title="Set the framework preset">
+    In the project configuration screen, set the **Framework Preset** to **Other** (or leave it as auto-detected). Ensure the root directory is `/` and no custom build command is required — `vercel.json` handles everything.
+  </Step>
+
+  <Step title="Deploy the project">
+    Click **Deploy**. Vercel will install dependencies, wrap `index.js` as a serverless function, and publish the app. When the build completes, your proxy is available at a URL like `https://doge-unblocker-xxxx.vercel.app`.
+  </Step>
+</Steps>
+
+<Warning>
+  Vercel serverless functions have a maximum execution duration (10 seconds on the Hobby plan, 15 seconds on Pro). Long-running proxy sessions, large file downloads, or streaming responses that exceed this limit will be forcibly terminated with a 504 error. For sustained proxy usage or large transfers, consider a platform with persistent processes such as [Railway](/self-hosting/railway) or [Docker](/self-hosting/docker).
+</Warning>
+
+## One-Click Deploy
+
+Skip the manual import steps by using Vercel's one-click clone-and-deploy link:
+
+[**Deploy with Vercel →**](https://vercel.com/new/clone?repositoryurl=https://github.com/dogenetwork/v4)
+
+This clones the repository into your GitHub account and opens the Vercel import wizard with everything pre-configured.

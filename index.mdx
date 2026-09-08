@@ -1,20 +1,79 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Doge Unblocker: Lightning-Fast Self-Hosted Web Proxy"
+sidebarTitle: "Home"
+description: "Doge Unblocker is a self-hosted web proxy powered by Ultraviolet and Node.js. Bypass network filters with tab cloaking, stealth tools, and a built-in games library."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Doge Unblocker is a lightning-fast, self-hosted web proxy built on Node.js, Express, and the [Ultraviolet](https://github.com/titaniumnetwork-dev/Ultraviolet) proxy engine. Deploy it on your own server or a free cloud platform and access any website through an encrypted Service Worker tunnel — complete with a suite of stealth tools to keep your session invisible.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Run Doge Unblocker locally or on a cloud platform in under five minutes.
+  </Card>
+  <Card title="Deployment Options" icon="cloud" href="/deployment">
+    One-click deploys to Railway, Render, Vercel, Koyeb, and Docker.
+  </Card>
+  <Card title="Web Proxy" icon="globe" href="/features/web-proxy">
+    Ultraviolet-powered proxy with XOR URL encoding and Service Worker routing.
+  </Card>
+  <Card title="Tab Cloaking" icon="mask" href="/features/tab-cloaking">
+    Disguise your browser tab as Google Drive, Docs, Classroom, or Google.
+  </Card>
+  <Card title="Stealth Tools" icon="eye-slash" href="/features/stealth-tools">
+    About:blank cloaking, panic key, clickoff cloaking, and leave confirmation.
+  </Card>
+  <Card title="Games & Apps" icon="gamepad" href="/features/games-and-apps">
+    Built-in library of unblocked games and proxied web applications.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## What is Doge Unblocker?
+
+Doge Unblocker routes your web traffic through a Node.js server using the Ultraviolet Service Worker proxy. URLs are XOR-encoded before being forwarded through the `/bare/` relay, so the destination never appears in your browser's address bar or network logs as a recognizable domain.
+
+On top of the core proxy, Doge Unblocker ships a full suite of stealth features — tab cloaking presets, about:blank windows, a configurable panic key, and clickoff auto-disguise — to keep the session invisible to monitoring software like DyKnow and GoGuardian.
+
+## Get Started in Three Steps
+
+<Steps>
+  <Step title="Clone and install">
+    Clone the repository and install dependencies with npm.
+    ```bash
+    git clone https://github.com/DogeLeader/DogeUnblocker-v4.git
+    cd DogeUnblocker-v4
+    npm install
+    ```
+  </Step>
+  <Step title="Start the server">
+    Start the Node.js server. It listens on port 8000 by default.
+    ```bash
+    npm start
+    ```
+  </Step>
+  <Step title="Open the proxy">
+    Navigate to `http://localhost:8000` in your browser, enter any URL or search query, and hit Enter to start proxying.
+  </Step>
+</Steps>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Ultraviolet Proxy Engine" icon="shield" href="/features/web-proxy">
+    Service Worker-based proxy with XOR encoding — no recognizable URLs in the address bar.
+  </Card>
+  <Card title="Tab Cloaking" icon="file-spreadsheet" href="/features/tab-cloaking">
+    One-click presets that change the tab title and favicon to Google Drive, Docs, or Classroom.
+  </Card>
+  <Card title="Panic Key" icon="bolt" href="/features/stealth-tools">
+    Set any key combo to instantly redirect or hide the window.
+  </Card>
+  <Card title="Themes" icon="palette" href="/features/themes-and-customization">
+    Seven built-in themes with particle effects and custom background URL support.
+  </Card>
+  <Card title="Self-Hosting" icon="server" href="/self-hosting/docker">
+    Full Docker support and one-click deploy buttons for every major platform.
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/uv-config">
+    Customize the Ultraviolet prefix, bare server path, and encoding strategy.
+  </Card>
+</CardGroup>
